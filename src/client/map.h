@@ -149,6 +149,11 @@ public:
     bool loadOtcm(const std::string& fileName);
     void saveOtcm(const std::string& fileName);
 
+    void initializeMapGenerator();
+    bool isThreadRunning(int threadId);
+    void startThread(int threadId, int minx, int miny, int minz, int maxx, int maxy, int maxz);
+    void drawMap(std::string fileName, int sx, int sy, int sz, int size);
+
     void loadOtbm(const std::string& fileName);
     void saveOtbm(const std::string& fileName);
 
