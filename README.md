@@ -52,22 +52,22 @@ https://github.com/edubart/otclient/wiki/Compiling-for-Android
 	
 **NOTE:** THERE ARE SOME PROBLEMS WITH MULTI THREADING! Read text below, if you want use more then 1 core of your CPU.
 
-	There are some problems with multithreading [few threads try to access 1 tile in same time].
-	You can try to run X threads, wait for crash, check in file 'otclient.log' last 'area' generated ['X of XX...'] before crash.
-	Then when you start client again, in 'generateMap' command after number of threads, you can add 'start area' to skip already generated areas. Example:
-		
-	**generateMap(25, 45, 0, 555, 699, 15, NUMBER_OF_THREADS, SKIP_AREAS)**
-		
-	**Remember to set it to number of areas generated before MINUS number of threads.**
-
-	So if client crashed with last message before 'debug ..':
-		
-	**78 of 192 generated or are being generated right now, 4 threads are generating**
-		
-	and last time your ran 7 threads, then after client restart type:
-		
-	**prepareClient(1076, '/things/1076/items.otb', '/map.otbm') generateMap(25, 45, 0, 555, 699, 15, 7, 71)**
-		
-	last parameter is **71** (78 - 7).
+There are some problems with multithreading [few threads try to access 1 tile in same time].
+You can try to run X threads, wait for crash, check in file 'otclient.log' last 'area' generated ['X of XX...'] before crash.
+Then when you start client again, in 'generateMap' command after number of threads, you can add 'start area' to skip already generated areas. Example:
 	
-	You can type few commands in one line with 'space' separator (like in code above: prepareClient and then generateMap)
+**generateMap(25, 45, 0, 555, 699, 15, NUMBER_OF_THREADS, SKIP_AREAS)**
+
+**Remember to set it to number of areas generated before MINUS number of threads.**
+
+So if client crashed with last message before 'debug ..':
+
+**78 of 192 generated or are being generated right now, 4 threads are generating**
+
+and last time your ran 7 threads, then after client restart type:
+	
+**prepareClient(1076, '/things/1076/items.otb', '/map.otbm') generateMap(25, 45, 0, 555, 699, 15, 7, 71)**
+	
+last parameter is **71** (78 - 7).
+
+You can type few commands in one line with 'space' separator (like in code above: prepareClient and then generateMap)
