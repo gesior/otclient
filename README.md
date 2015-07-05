@@ -42,7 +42,15 @@ https://github.com/edubart/otclient/wiki/Compiling-for-Android
 	If you are borded of getting 'crash' every few seconds/minutes [restart client and type all again..] you can set it to **1**.
 	It will take sooome time, but it will work for sure, so you can leave PC for night and get your map images.
 
-	**NOTE:** THERE ARE SOME PROBLEMS WITH MULTI THREADING! Read text below, if you want use more then 1 core of your CPU.
+9. Your map images will appear in C:\*_USERS_*\*_YOUR_USER_NAME_*\otclient\map\
+
+	_USERS_ - your Windows language 'users' (like 'Uzytkownicy' in polish windows 7)
+	_YOUR_USER_NAME_ - your Windows login
+	
+10. DONE! :)
+
+	
+**NOTE:** THERE ARE SOME PROBLEMS WITH MULTI THREADING! Read text below, if you want use more then 1 core of your CPU.
 
 	There are some problems with multithreading [few threads try to access 1 tile in same time].
 	You can try to run X threads, wait for crash, check in file 'otclient.log' last 'area' generated ['X of XX...'] before crash.
