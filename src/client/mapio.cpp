@@ -111,7 +111,6 @@ bool Map::isThreadRunning(int threadId)
 
 void Map::startThread(int threadId, int minx, int miny, int minz, int maxx, int maxy, int maxz)
 {
-    //g_logger.info("start 1");
     threadsStates[threadId] = true;
     threads[threadId] = new boost::thread(mapPartGenerator, threadId, minx, miny, minz, maxx, maxy, maxz);
 }
@@ -217,21 +216,7 @@ void Map::loadOtbm(const std::string& fileName)
         int minx, miny, minz, maxx, maxy, maxz;
         minx = miny = minz = 999999;
         maxx = maxy = maxz = -5;
-        /*
-        g_logger.info("start 1");
-boost::thread* workerThread1 = new boost::thread(workerFunc, 1, 1000000000);
-        g_logger.info("start 2");
-boost::thread workerThread2(workerFunc, 2, 2000000000);
-        g_logger.info("start 3");
-boost::thread workerThread3(workerFunc, 3, 2000000000);
-        g_logger.info("start 4");
-boost::thread workerThread4(workerFunc, 4, 2000000000);
-        g_logger.info("start 5");
-boost::thread workerThread5(workerFunc, 5, 2000000000);
-        g_logger.info("start 6");
-boost::thread workerThread6(workerFunc, 6, 2000000000);
-        g_logger.info("start done");
-        */
+
         for(const BinaryTreePtr& nodeMapData : node->getChildren()) {
             uint8 mapDataType = nodeMapData->getU8();
             if(mapDataType == OTBM_TILE_AREA) {
