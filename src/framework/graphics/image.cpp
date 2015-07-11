@@ -31,6 +31,7 @@ Image::Image(const Size& size, int bpp, uint8 *pixels)
 {
     m_size = size;
     m_bpp = bpp;
+    blited = false;
     m_pixels.resize(size.area() * bpp, 0);
     if(pixels)
         memcpy(&m_pixels[0], pixels, m_pixels.size());
@@ -65,6 +66,11 @@ ImagePtr Image::loadPNG(const std::string& file)
 
 void Image::savePNG(const std::string& fileName)
 {
+    if(!blited)
+    {
+        // empty image
+        return;
+    }
     FileStreamPtr fin = g_resources.createFile(fileName);
     if(!fin)
         stdext::throw_exception(stdext::format("failed to open file '%s' for write", fileName));
@@ -75,6 +81,35 @@ void Image::savePNG(const std::string& fileName)
     fin->write(data.str().c_str(), data.str().length());
     fin->flush();
     fin->close();
+}
+
+void Image::cut()
+{
+    if(!blited)
+    {
+        // empty image
+        return;
+    }
+    int width = m_size.width() - 64;
+    int height = m_size.height() - 64;
+    //std::vector<uint8> pixels;
+    //pixels.resize(width * height * m_bpp, 0);
+    for(int y = 0; y  < height; y++)
+    {
+        for(int x = 0; x  < width; x++)
+        {
+            int targetPos = (y * width + x) * m_bpp;
+            int sourcePos = ((y + 32) * m_size.width() + x + 32) * m_bpp;
+            m_pixels[targetPos] = m_pixels[sourcePos];
+            m_pixels[targetPos+1] = m_pixels[sourcePos+1];
+            m_pixels[targetPos+2] = m_pixels[sourcePos+2];
+            m_pixels[targetPos+3] = m_pixels[sourcePos+3];
+        }
+    }
+    m_size.setWidth(width);
+    m_size.setHeight(height);
+    m_pixels.resize(width * height * m_bpp, 0);
+    //memcpy(&m_pixels[0], &pixels[0], m_pixels.size());
 }
 
 void Image::overwriteMask(const Color& maskedColor, const Color& insideColor, const Color& outsideColor)
@@ -104,6 +139,7 @@ void Image::blit(const Point& dest, const ImagePtr& other)
     if(!other)
         return;
 
+    blited = true;
     uint8* otherPixels = other->getPixelData();
     for(int p = 0; p < other->getPixelCount(); ++p) {
         int x = p % other->getWidth();

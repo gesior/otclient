@@ -35,6 +35,7 @@ public:
     static ImagePtr loadPNG(const std::string& file);
 
     void savePNG(const std::string& fileName);
+    void cut();
 
     void overwriteMask(const Color& maskedColor, const Color& insideColor = Color::white, const Color& outsideColor = Color::alpha);
     void blit(const Point& dest, const ImagePtr& other);
@@ -55,6 +56,7 @@ public:
     uint8* getPixel(int x, int y) { return &m_pixels[(y * m_size.width() + x) * m_bpp]; }
 
 private:
+    bool blited;
     std::vector<uint8> m_pixels;
     Size m_size;
     int m_bpp;
