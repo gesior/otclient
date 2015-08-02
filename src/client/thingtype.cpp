@@ -433,7 +433,7 @@ void ThingType::drawToImage(Point dest, int xPattern, int yPattern, int zPattern
                 int dy = y + 32 * (m_size.height() - h - 1) - 32 * (m_size.height() - 1);
                 if(dx >= 0 && dy >= 0)// todo wieksze
                 {
-                    image->blit(Point(dx, dy), g_sprites.getSpriteImage(m_spritesIndex[getSpriteIndex(w, h, l, xPattern, yPattern, zPattern, 0)]));
+                    image->blit(Point(dx, dy), g_sprites.getSpriteImageCached(m_spritesIndex[getSpriteIndex(w, h, l, xPattern, yPattern, zPattern, 0)]));
                 }
             }
         }
