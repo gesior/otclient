@@ -48,10 +48,10 @@ public:
     int getSpritesCount() { return m_spritesCount; }
 
     ImagePtr getSpriteImage(int id);
+    ImagePtr getSpriteImageCached(int id);
     bool isLoaded() { return m_loaded; }
 
 private:
-    boost::mutex mtx_;
     stdext::boolean<false> m_loaded;
     uint32 m_signature;
     int m_spritesCount;

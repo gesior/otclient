@@ -31,42 +31,8 @@
 #include <framework/core/binarytree.h>
 #include <framework/xml/tinyxml.h>
 #include <framework/ui/uiwidget.h>
-
-#include <boost/thread.hpp>
 #include <framework/graphics/image.h>
-/*
-void workerFunc(int x, int z)
-{
-    boost::posix_time::seconds workTime(1);
-g_logger.info("start sleep");
-int i = 0;
-while(i < 25)
-{
-    int o = 0;
-    int k = 3;
-    while(o < z)
-    {
-        o++;
-        k = k*k*3;
-    }
-    while(o < z)
-    {
-        o++;
-        k = k*k*3;
-    }
-    while(o < z)
-    {
-        o++;
-        k = k*k*3;
-    }
-    ++i;
-    boost::this_thread::sleep(workTime);
-g_logger.info(stdext::format("mesleep %d %d", x, k));
-}
 
-g_logger.info(stdext::format("end sleep %d", x));
-}
-*/
 #define THREADS_NUMBER 128
 boost::thread* threads[THREADS_NUMBER];
 bool threadsStates[THREADS_NUMBER];

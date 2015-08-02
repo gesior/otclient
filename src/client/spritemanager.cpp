@@ -124,30 +124,42 @@ void SpriteManager::unload()
     m_spritesFile = nullptr;
 }
 
-// limit of sprites in .spr
-ImagePtr imgs[500000];
-bool inited = false;
+class SpriteCache
+{
+public:
+    SpriteCache()
+    {
+        images.resize(g_sprites.getSpritesCount());
+        int i = 1;
+        for(auto& ptr : images) {
+            ptr = g_sprites.getSpriteImage(i++);
+        }
+    }
+    ImagePtr getSpriteImage(int id) const
+    {
+        assert(id <= static_cast<int>(images.size()));
+        if(id <= 0) {
+            return nullptr;
+        } else {           
+            return images[id-1]; //ids start at 1
+        }
+    }
+private:
+    std::vector<ImagePtr> images;
+};
+
+ImagePtr SpriteManager::getSpriteImageCached(int id)
+{
+    static const SpriteCache cache;
+    return cache.getSpriteImage(id);
+}
 
 ImagePtr SpriteManager::getSpriteImage(int id)
 {
-    boost::lock_guard<boost::mutex> guard(mtx_);
-    if(!inited)
-    {
-        int i = 0;
-        for(i = 0; i < 500000; i++)
-        {
-            imgs[i] = NULL;
-        }
-        inited = true;
-    }
     try {
 
         if(id == 0 || !m_spritesFile)
             return nullptr;
-
-        // make it uses images cache
-        if(imgs[id])
-            return imgs[id];
 
         m_spritesFile->seek(((id-1) * 4) + m_spritesOffset);
 
@@ -206,7 +218,6 @@ ImagePtr SpriteManager::getSpriteImage(int id)
             pixels[writePos + 3] = 0x00;
             writePos += 4;
         }
-        imgs[id] = image;
         return image;
     } catch(stdext::exception& e) {
         g_logger.error(stdext::format("Failed to get sprite id %d: %s", id, e.what()));
