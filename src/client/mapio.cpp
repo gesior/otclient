@@ -19,7 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
+#include <boost/lockfree/spsc_queue.hpp>
 #include "map.h"
 #include "tile.h"
 #include "game.h"
@@ -33,12 +33,7 @@
 #include <framework/ui/uiwidget.h>
 #include <framework/graphics/image.h>
 
-#define THREADS_NUMBER 128
-boost::thread* threads[THREADS_NUMBER];
-bool threadsStates[THREADS_NUMBER];
-bool isRunning = false;
-
-void mapPartGenerator(int threadId, int minx, int miny, int minz, int maxx, int maxy, int maxz)
+void mapPartGenerator(int minx, int miny, int minz, int maxx, int maxy, int maxz)
 {
     for(int z = minz; z <= maxz; z++)
     {
@@ -53,32 +48,164 @@ void mapPartGenerator(int threadId, int minx, int miny, int minz, int maxx, int 
             for(int y = miny; y <= maxy; y++)
             {
                 std::stringstream path3;
-                path3 << "map/" << z << "/" << x << "/" << z << "_" << x << "_" << y << ".png";
+                path3 << "map/"<< x << "_" << y << "_" << z << ".png";
+                //path3 << "map/" << z << "/" << x << "/" << z << "_" << x << "_" << y << ".png";
                 g_map.drawMap(path3.str(), x * 8, y * 8, z, 8);
             }
         }
     }
-    threadsStates[threadId] = false;
 }
 
+class MapGenWorkItem
+{
+public:
+    static MapGenWorkItem* make(int minx, int miny, int minz, int maxx, int maxy, int maxz) {
+        return new MapGenWorkItem(minx, miny, minz, maxx, maxy, maxz);
+    }
+
+    void execute() {
+        mapPartGenerator(minx, miny, minz, maxx, maxy, maxz);
+    }
+
+private:
+    int minx, miny, minz, maxx, maxy, maxz;
+    MapGenWorkItem(int minx, int miny, int minz, int maxx, int maxy, int maxz):
+        minx(minx),
+        miny(miny),
+        minz(minz),
+        maxx(maxx),
+        maxy(maxy),
+        maxz(maxz) {}
+};
+
+class Monitor {
+public:
+	void wait() {
+		std::unique_lock<std::mutex> lock {mtx};
+		cv.wait(lock);
+	}
+	
+	void notify() {
+		cv.notify_one();
+	}
+private:
+	std::mutex mtx;
+	std::condition_variable cv;
+};
+
+template <typename WorkItemType>
+class WorkQueue
+{
+public:
+    WorkQueue(int workerCount):
+        workerCount(workerCount),
+        workers(new Worker[workerCount]) {}
+    
+    ~WorkQueue() {
+        signalCompletion();
+    }
+    
+    bool start(int workerCount) {
+        if (!workers) {
+            this->workerCount = workerCount;
+            lastWorkerPushed = 0;
+            workers.reset(new Worker[workerCount]);
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
+    bool completed() const {
+        return workers;
+    }
+    
+    bool tryPush(WorkItemType* workItem) {
+        lastWorkerPushed = (lastWorkerPushed + 1) % workerCount; //Round-Robin work scheduling
+        auto ret = workers[lastWorkerPushed].workQueue.push(workItem);
+        if (ret) {
+            workers[lastWorkerPushed].notify();
+        }
+        return ret;
+    }
+    
+    void signalCompletion() {
+        if (workers) {
+            for(int i = 0; i < workerCount; ++i) {
+                while(workers[i].workQueue.push(nullptr));
+                workers[i].notify();
+            }
+            joinAll();
+        }
+    }
+    
+    void joinAll() {
+        workers.reset();
+    }
+private:
+    struct WorkItemHolder {
+        WorkItemHolder() = default;
+        WorkItemHolder(const WorkItemHolder&) = delete;
+        WorkItemHolder& operator=(const WorkItemHolder&) = delete;
+        ~WorkItemHolder() {
+            delete ptr;
+        }
+        WorkItemType* ptr {nullptr};
+    };
+
+    struct Worker : Monitor
+    {
+        typedef boost::lockfree::spsc_queue<WorkItemType*> WorkItemQueue;
+        Worker():
+            workQueue(maxItemsPerWorker),
+            thread(&Worker::workerLoop, this) {}
+
+        void workerLoop() {
+            while(true) {
+                WorkItemHolder work;
+                if(workQueue.pop(work.ptr)) {
+                    if(work.ptr == nullptr) {
+                        return;
+                    } else {
+                        work.ptr->execute();
+                    }
+                } else {
+                    wait();
+                }
+            }
+        }
+
+        ~Worker() {
+            if(thread.joinable()) {
+                thread.join();
+            }
+        }
+        
+        WorkItemQueue workQueue;
+        std::thread thread;
+        static constexpr auto maxItemsPerWorker = 1000;
+    };
+
+    int workerCount;
+    std::unique_ptr<Worker[]> workers;
+    int lastWorkerPushed {0};
+};
+
+WorkQueue<MapGenWorkItem> queue (16);
 void Map::initializeMapGenerator()
 {
-    isRunning = true;
-    for(int i = 0; i < THREADS_NUMBER; i++)
-    {
-        threadsStates[i] = false;
-    }
 }
 
 bool Map::isThreadRunning(int threadId)
 {
-    return threadsStates[threadId];
+    return false;
 }
 
 void Map::startThread(int threadId, int minx, int miny, int minz, int maxx, int maxy, int maxz)
 {
-    threadsStates[threadId] = true;
-    threads[threadId] = new boost::thread(mapPartGenerator, threadId, minx, miny, minz, maxx, maxy, maxz);
+    /*threadsStates[threadId] = true;
+    threads[threadId] = new boost::thread(mapPartGenerator, threadId, minx, miny, minz, maxx, maxy, maxz);*/
+    while (!queue.tryPush(MapGenWorkItem::make(minx, miny, minz, maxx, maxy, maxz)));
 }
 
 void Map::drawMap(std::string fileName, int sx, int sy, int sz, int size)
@@ -109,9 +236,9 @@ void Map::drawMap(std::string fileName, int sx, int sy, int sz, int size)
             }
         }
 
-		// reduce image size to size from argument (for generation time image is 2 tiles bigger, because of 64x64 items)
+        // reduce image size to size from argument (for generation time image is 2 tiles bigger, because of 64x64 items)
         image->cut();
-		// save to file, save function is modified and will ignore empty images!
+        // save to file, save function is modified and will ignore empty images!
         image->savePNG(fileName);
 }
 
