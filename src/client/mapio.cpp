@@ -20,6 +20,8 @@
  * THE SOFTWARE.
  */
 #include <boost/lockfree/spsc_queue.hpp>
+#include <map>
+#include <iostream>
 #include "map.h"
 #include "tile.h"
 #include "game.h"
@@ -37,20 +39,14 @@ void mapPartGenerator(int minx, int miny, int minz, int maxx, int maxy, int maxz
 {
     for(int z = minz; z <= maxz; z++)
     {
-        std::stringstream path1;
-        path1 << "map/" << z;
-        g_resources.makeDir(path1.str());
         for(int x = minx; x <= maxx; x++)
         {
-            std::stringstream path2;
-            path2 << "map/" << z << "/" << x;
-            g_resources.makeDir(path2.str());
             for(int y = miny; y <= maxy; y++)
             {
-                std::stringstream path3;
-                path3 << "map/"<< x << "_" << y << "_" << z << ".png";
-                //path3 << "map/" << z << "/" << x << "/" << z << "_" << x << "_" << y << ".png";
-                g_map.drawMap(path3.str(), x * 8, y * 8, z, 8);
+                std::stringstream path;
+                path << "map/"<< x << "_" << y << "_" << z << ".png";
+                g_map.drawMap(path.str(), x * 8, y * 8, z, 8);
+                g_map.increaseGeneratedAreasCount();
             }
         }
     }
@@ -59,11 +55,13 @@ void mapPartGenerator(int minx, int miny, int minz, int maxx, int maxy, int maxz
 class MapGenWorkItem
 {
 public:
-    static MapGenWorkItem* make(int minx, int miny, int minz, int maxx, int maxy, int maxz) {
+    static MapGenWorkItem* make(int minx, int miny, int minz, int maxx, int maxy, int maxz)
+    {
         return new MapGenWorkItem(minx, miny, minz, maxx, maxy, maxz);
     }
 
-    void execute() {
+    void execute()
+    {
         mapPartGenerator(minx, miny, minz, maxx, maxy, maxz);
     }
 
@@ -78,19 +76,22 @@ private:
         maxz(maxz) {}
 };
 
-class Monitor {
-public:
-	void wait() {
-		std::unique_lock<std::mutex> lock {mtx};
-		cv.wait(lock);
-	}
-	
-	void notify() {
-		cv.notify_one();
-	}
-private:
-	std::mutex mtx;
-	std::condition_variable cv;
+class Monitor
+{
+    public:
+        void wait()
+        {
+            std::unique_lock<std::mutex> lock {mtx};
+            cv.wait(lock);
+        }
+
+        void notify()
+        {
+            cv.notify_one();
+        }
+    private:
+        std::mutex mtx;
+        std::condition_variable cv;
 };
 
 template <typename WorkItemType>
@@ -100,26 +101,22 @@ public:
     WorkQueue(int workerCount):
         workerCount(workerCount),
         workers(new Worker[workerCount]) {}
-    
+
     ~WorkQueue() {
         signalCompletion();
     }
-    
-    bool start(int workerCount) {
-        if (!workers) {
-            this->workerCount = workerCount;
-            lastWorkerPushed = 0;
-            workers.reset(new Worker[workerCount]);
-            return true;
-        } else {
-            return false;
-        }
+
+    void start(int workerCount) {
+        signalCompletion();
+        this->workerCount = workerCount;
+        lastWorkerPushed = 0;
+        workers.reset(new Worker[workerCount]);
     }
-    
+
     bool completed() const {
         return workers;
     }
-    
+
     bool tryPush(WorkItemType* workItem) {
         lastWorkerPushed = (lastWorkerPushed + 1) % workerCount; //Round-Robin work scheduling
         auto ret = workers[lastWorkerPushed].workQueue.push(workItem);
@@ -128,7 +125,7 @@ public:
         }
         return ret;
     }
-    
+
     void signalCompletion() {
         if (workers) {
             for(int i = 0; i < workerCount; ++i) {
@@ -138,10 +135,13 @@ public:
             joinAll();
         }
     }
-    
+
     void joinAll() {
         workers.reset();
     }
+
+    int workerCount;
+    int lastWorkerPushed {0};
 private:
     struct WorkItemHolder {
         WorkItemHolder() = default;
@@ -180,32 +180,41 @@ private:
                 thread.join();
             }
         }
-        
+
         WorkItemQueue workQueue;
         std::thread thread;
         static constexpr auto maxItemsPerWorker = 1000;
     };
 
-    int workerCount;
     std::unique_ptr<Worker[]> workers;
-    int lastWorkerPushed {0};
 };
 
-WorkQueue<MapGenWorkItem> queue (16);
-void Map::initializeMapGenerator()
+WorkQueue<MapGenWorkItem> queue (1);
+void Map::initializeMapGenerator(int threadsNumber)
 {
+    queue.start(threadsNumber);
+    g_resources.makeDir("map");
+    g_logger.debug(stdext::format("Started %d threads!", queue.workerCount));
 }
 
-bool Map::isThreadRunning(int threadId)
-{
-    return false;
-}
 
-void Map::startThread(int threadId, int minx, int miny, int minz, int maxx, int maxy, int maxz)
+void Map::addAreaToGenerator(int startAreaId, int endAreaId)
 {
-    /*threadsStates[threadId] = true;
-    threads[threadId] = new boost::thread(mapPartGenerator, threadId, minx, miny, minz, maxx, maxy, maxz);*/
-    while (!queue.tryPush(MapGenWorkItem::make(minx, miny, minz, maxx, maxy, maxz)));
+    typedef std::unordered_map<uint32, uint32>::iterator it_type;
+    int i = 0;
+    uint32 position, x, y, z;
+    for(it_type iterator = mapAreas.begin(); iterator != mapAreas.end(); iterator++)
+    {
+        if(startAreaId <= i && i <= endAreaId)
+        {
+            position = iterator->first;
+            z = position & 0x0F;
+            y = (position >> 4) & 0x3FFF;
+            x = (position >> 18) & 0x3FFF;
+            while (!queue.tryPush(MapGenWorkItem::make(x, y, z, x, y, z)));
+        }
+        i++;
+    }
 }
 
 void Map::drawMap(std::string fileName, int sx, int sy, int sz, int size)
@@ -309,6 +318,7 @@ void Map::loadOtbm(const std::string& fileName)
         int minx, miny, minz, maxx, maxy, maxz;
         minx = miny = minz = 999999;
         maxx = maxy = maxz = -5;
+        mapAreas.clear();
 
         for(const BinaryTreePtr& nodeMapData : node->getChildren()) {
             uint8 mapDataType = nodeMapData->getU8();
@@ -326,6 +336,10 @@ void Map::loadOtbm(const std::string& fileName)
                     HousePtr house = nullptr;
                     uint32 flags = TILESTATE_NONE;
                     Position pos = basePos + nodeTile->getPoint();
+                    uint32 positionInt = pos.z + (pos.y << 4) + (pos.x << 18);
+                    //std::stringstream positionString;
+                    //positionString << pos.x << "_" << pos.y << "_" << pos.z;
+                    mapAreas[pos.z + (pos.y / 8) * 16 + (pos.x / 8) * 262144] = positionInt;
 
                     if(pos.x < minx)
                     {
@@ -459,8 +473,7 @@ void Map::loadOtbm(const std::string& fileName)
             } else
                 stdext::throw_exception(stdext::format("Unknown map data node %d", (int)mapDataType));
         }
-        g_logger.debug(stdext::format("Example generator of whole map: generateMap(%d, %d, %d, %d, %d, %d, 4) [last 4 = 4 threads to generate]", minx, miny, minz, maxx, maxy, maxz));
-        g_logger.info("These positions are just suggestion. If you know better where is first/last tile then you can use other values.");
+        g_logger.debug(stdext::format("Generated list of '%d' images to generate. Now just type: generateMap()", mapAreas.size()));
 
         fin->close();
     } catch(std::exception& e) {
