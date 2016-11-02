@@ -24,7 +24,7 @@ https://github.com/edubart/otclient/wiki/Compiling-for-Android
     
     prepareClient(1076, '/things/1076/items.otb', '/map.otbm', 8)
     
-	with you client protocol version, valid paths to items.otb and map.otbm, and number of threads to run
+	with you client protocol version, valid paths to items.otb and map.otbm, and number of threads (in example it's 8) to run
 	[Paths are relational, so start path with '/' to start in folder 'data', access to other folders in computer is blocked]
 
 7. OTClient will show in 10-50 seconds (it will freez client, do not close it, just wait) something like [pink text]:
@@ -36,8 +36,6 @@ https://github.com/edubart/otclient/wiki/Compiling-for-Android
 	**generateMap()**
 		
 	OTClient will report progress in terminal.
-
-	Last **4** is number of threads to run in same time (only way to use more then 1 core to generate images).
 
 9. Your map images will appear in C:\*_USERS_*\*_YOUR_USER_NAME_*\otclient\map\
 
