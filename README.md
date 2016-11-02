@@ -22,52 +22,28 @@ https://github.com/edubart/otclient/wiki/Compiling-for-Android
 
 6. Type in client terminal command like:
     
-    prepareClient(1076, '/things/1076/items.otb', '/map.otbm')
+    prepareClient(1076, '/things/1076/items.otb', '/map.otbm', 8)
     
-	with you client protocol version and valid paths to items.otb and map.otbm
-	[Paths are relational, so start path with '/' to start in folder 'data', access to other folders is blocked]
+	with you client protocol version, valid paths to items.otb and map.otbm, and number of threads to run
+	[Paths are relational, so start path with '/' to start in folder 'data', access to other folders in computer is blocked]
 
 7. OTClient will show in 10-50 seconds (it will freez client, do not close it, just wait) something like [pink text]:
 
-	Example generator of whole map: generateMap(25, 45, 0, 555, 699, 15, 4) [last 4 = 4 threads to generate]
+	Generate list of '123456' images to generate. Now just type: generateMap()
 
 8. Type in client terminal command:
 		
-	**generateMap(25, 45, 0, 555, 699, 15, 4)**
+	**generateMap()**
 		
 	OTClient will report progress in terminal.
 
 	Last **4** is number of threads to run in same time (only way to use more then 1 core to generate images).
-
-	If you are borded of getting 'crash' every few seconds/minutes [restart client and type all again..] you can set it to **1**.
-	It will take sooome time, but it will work for sure, so you can leave PC for night and get your map images.
 
 9. Your map images will appear in C:\*_USERS_*\*_YOUR_USER_NAME_*\otclient\map\
 
 	_USERS_ - your Windows language 'users' (like 'Uzytkownicy' in polish windows 7)
 	_YOUR_USER_NAME_ - your Windows login
 	
+	Linux: /home/_YOUR_USER_NAME_/.otclient/map - this folder is invisible in file explorer!
+	You must type 'cd .otclient' in your HOME folder, it will work! It's visible in 'mc' program, so you can use it to check generator results.
 10. DONE! :)
-
-	
-**NOTE:** THERE ARE SOME PROBLEMS WITH MULTI THREADING! Read text below, if you want use more then 1 core of your CPU.
-
-There are some problems with multithreading [few threads try to access 1 tile in same time].
-You can try to run X threads, wait for crash, check in file 'otclient.log' last 'area' generated ['X of XX...'] before crash.
-Then when you start client again, in 'generateMap' command after number of threads, you can add 'start area' to skip already generated areas. Example:
-	
-**generateMap(25, 45, 0, 555, 699, 15, NUMBER_OF_THREADS, SKIP_AREAS)**
-
-**Remember to set it to number of areas generated before MINUS number of threads.**
-
-So if client crashed with last message before 'debug ..':
-
-**78 of 192 generated or are being generated right now, 4 threads are generating**
-
-and last time your ran 7 threads, then after client restart type:
-	
-**prepareClient(1076, '/things/1076/items.otb', '/map.otbm') generateMap(25, 45, 0, 555, 699, 15, 7, 71)**
-	
-last parameter is **71** (78 - 7).
-
-You can type few commands in one line with 'space' separator (like in code above: prepareClient and then generateMap)
