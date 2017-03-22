@@ -20,6 +20,9 @@
  * THE SOFTWARE.
  */
 
+#include <boost/lockfree/spsc_queue.hpp>
+#include <map>
+#include <iostream>
 #include "map.h"
 #include "tile.h"
 #include "game.h"
@@ -32,9 +35,255 @@
 #include <framework/xml/tinyxml.h>
 #include <framework/ui/uiwidget.h>
 
+#include <framework/graphics/image.h>
+
+void mapPartGenerator(int x, int y, int z)
+{
+	std::stringstream path;
+	path << "map/" << x << "_" << y << "_" << z << ".png";
+	g_map.drawMap(path.str(), x * 8, y * 8, z, 8);
+	g_map.increaseGeneratedAreasCount();
+}
+
+class MapGenWorkItem
+{
+public:
+	static MapGenWorkItem* make(int minx, int miny, int minz)
+	{
+		return new MapGenWorkItem(minx, miny, minz);
+	}
+
+	void execute()
+	{
+		mapPartGenerator(minx, miny, minz);
+	}
+
+private:
+	int minx, miny, minz;
+	MapGenWorkItem(int minx, int miny, int minz) :
+		minx(minx),
+		miny(miny),
+		minz(minz) {}
+};
+
+class Monitor
+{
+public:
+	void wait()
+	{
+		std::unique_lock<std::mutex> lock{ mtx };
+		cv.wait(lock);
+	}
+
+	void notify()
+	{
+		cv.notify_one();
+	}
+private:
+	std::mutex mtx;
+	std::condition_variable cv;
+};
+
+template <typename WorkItemType>
+class WorkQueue
+{
+public:
+	WorkQueue(int workerCount) :
+		workerCount(workerCount),
+		workers(new Worker[workerCount]) {}
+
+	~WorkQueue() {
+		signalCompletion();
+	}
+
+	void start(int workerCount) {
+		signalCompletion();
+		this->workerCount = workerCount;
+		lastWorkerPushed = 0;
+		workers.reset(new Worker[workerCount]);
+	}
+
+	bool completed() const {
+		return workers;
+	}
+
+	bool tryPush(WorkItemType* workItem) {
+		lastWorkerPushed = (lastWorkerPushed + 1) % workerCount; //Round-Robin work scheduling
+		auto ret = workers[lastWorkerPushed].workQueue.push(workItem);
+		if (ret) {
+			workers[lastWorkerPushed].notify();
+		}
+		return ret;
+	}
+
+	void signalCompletion() {
+		if (workers) {
+			for (int i = 0; i < workerCount; ++i) {
+				while (workers[i].workQueue.push(nullptr));
+				workers[i].notify();
+			}
+			joinAll();
+		}
+	}
+
+	void joinAll() {
+		workers.reset();
+	}
+
+	int workerCount;
+	int lastWorkerPushed{ 0 };
+private:
+	struct WorkItemHolder {
+		WorkItemHolder() = default;
+		WorkItemHolder(const WorkItemHolder&) = delete;
+		WorkItemHolder& operator=(const WorkItemHolder&) = delete;
+		~WorkItemHolder() {
+			delete ptr;
+		}
+		WorkItemType* ptr{ nullptr };
+	};
+
+	struct Worker : Monitor
+	{
+		typedef boost::lockfree::spsc_queue<WorkItemType*> WorkItemQueue;
+		Worker() :
+			workQueue(maxItemsPerWorker),
+			thread(&Worker::workerLoop, this) {}
+
+		void workerLoop() {
+			while (true) {
+				WorkItemHolder work;
+				if (workQueue.pop(work.ptr)) {
+					if (work.ptr == nullptr) {
+						return;
+					}
+					else {
+						work.ptr->execute();
+					}
+				}
+				else {
+					wait();
+				}
+			}
+		}
+
+		~Worker() {
+			if (thread.joinable()) {
+				thread.join();
+			}
+		}
+
+		WorkItemQueue workQueue;
+		std::thread thread;
+		static constexpr auto maxItemsPerWorker = 1000;
+	};
+
+	std::unique_ptr<Worker[]> workers;
+};
+
+WorkQueue<MapGenWorkItem> queue(1);
+void Map::initializeMapGenerator(int threadsNumber)
+{
+	queue.start(threadsNumber);
+	g_resources.makeDir("map");
+	g_logger.debug(stdext::format("Started %d map generator threads.", queue.workerCount));
+}
+
+
+void Map::addAreasToGenerator(int startAreaId, int endAreaId)
+{
+	typedef std::unordered_map<uint32, uint32>::iterator it_type;
+	int i = 0;
+	uint32 position, x, y, z;
+	for (it_type iterator = mapAreas.begin(); iterator != mapAreas.end(); iterator++)
+	{
+		if (startAreaId <= i && i <= endAreaId)
+		{
+			position = iterator->first;
+			z = position & 0x0F;
+			y = (position >> 4) & 0x3FFF;
+			x = (position >> 18) & 0x3FFF;
+			while (!queue.tryPush(MapGenWorkItem::make(x, y, z)));
+		}
+		i++;
+	}
+}
+
+void Map::drawMap(std::string fileName, int sx, int sy, int sz, int size)
+{
+	Position pros;
+	ImagePtr image(new Image(Size(32 * (size + 2), 32 * (size + 2))));
+	int lowestFloor = 15;
+	if (sz <= 7) {
+		lowestFloor = 7;
+	}
+	int offset = 0;
+	for (int z = lowestFloor; z > sz; z--)
+	{
+		pros.z = z;
+		offset = z - sz;
+		for (int x = -offset; x <= size; x++)
+		{
+			for (int y = -offset; y <= size; y++)
+			{
+				pros.x = sx + x;
+				pros.y = sy + y;
+				if (const TilePtr& tile = getTile(pros))
+				{
+					int offX = x + 1 + offset;
+					int offY = y + 1 + offset;
+					if (offX < size + 2 && offY < size + 2) {
+						Point a(offX * 32, offY * 32);
+						tile->drawToImage(a, image);
+					}
+				}
+			}
+		}
+	}
+
+	image->addShadow(100 - shadowPercent);
+
+	pros.z = sz;
+	offset = 0;
+	for (int x = -offset; x <= size; x++)
+	{
+		for (int y = -offset; y <= size; y++)
+		{
+			pros.x = sx + x;
+			pros.y = sy + y;
+			if (const TilePtr& tile = getTile(pros))
+			{
+				int offX = x + 1 + offset;
+				int offY = y + 1 + offset;
+				if (offX < size + 2 && offY < size + 2) {
+					Point a(offX * 32, offY * 32);
+					tile->drawToImage(a, image);
+				}
+			}
+		}
+	}
+	// reduce image size to size from argument (for generation time image is 2 tiles bigger, because of 64x64 items)
+	image->cut();
+	// save to file, save function is modified and will ignore empty images!
+	image->savePNG(fileName);
+}
+
 void Map::loadOtbm(const std::string& fileName)
 {
     try {
+		// clear map at load, we want to load map part and limit RAM usage
+		cleanDynamicThings();
+
+		for (int i = 0; i <= Otc::MAX_Z; ++i)
+			m_tileBlocks[i].clear();
+
+		m_waypoints.clear();
+
+		g_towns.clear();
+		g_houses.clear();
+		g_creatures.clearSpawns();
+		m_tilesRect = Rect(65534, 65534, 0, 0);
+
         if(!g_things.isOtbLoaded())
             stdext::throw_exception("OTB isn't loaded yet to load a map.");
 
@@ -96,6 +345,16 @@ void Map::loadOtbm(const std::string& fileName)
             }
         }
 
+		// reset map min/max positions if only loading map size, not map tiles
+		if (maxXToLoad == -1) {
+			minPosition.x = minPosition.y = 99999;
+			minPosition.z = 123;
+			maxPosition.x = maxPosition.y = maxPosition.z = 0;
+		}
+		// reset image generation values
+		mapAreas.clear();
+		mapTilesPerX.clear();
+
         for(const BinaryTreePtr& nodeMapData : node->getChildren()) {
             uint8 mapDataType = nodeMapData->getU8();
             if(mapDataType == OTBM_TILE_AREA) {
@@ -112,6 +371,57 @@ void Map::loadOtbm(const std::string& fileName)
                     HousePtr house = nullptr;
                     uint32 flags = TILESTATE_NONE;
                     Position pos = basePos + nodeTile->getPoint();
+
+					if (maxXToLoad == -1) {
+						// loads map min/max position, not map
+						if (pos.x < minPosition.x)
+						{
+							minPosition.x = pos.x;
+						}
+						if (pos.y < minPosition.y)
+						{
+							minPosition.y = pos.y;
+						}
+						if (pos.z < minPosition.z)
+						{
+							minPosition.z = pos.z;
+						}
+						if (pos.x > maxPosition.x)
+						{
+							maxPosition.x = pos.x;
+						}
+						if (pos.y > maxPosition.y)
+						{
+							maxPosition.y = pos.y;
+						}
+						if (pos.z > maxPosition.z)
+						{
+							maxPosition.z = pos.z;
+						}
+						mapTilesPerX[pos.x]++;
+					}
+
+
+					// do not load map tile
+					if (pos.x < minXToLoad || maxXToLoad < pos.x) {
+						continue;
+					}
+
+					// add to generator list
+					if (minXToRender <= pos.x && pos.x <= maxXToRender) {
+						if (pos.z <= 7) {
+							for (short allFloors = minPosition.z; allFloors <= pos.z; allFloors++) {
+								uint32 positionInt = allFloors + (pos.y << 4) + (pos.x << 18);
+								mapAreas[allFloors + (pos.y / 8) * 16 + (pos.x / 8) * 262144] = positionInt;
+							}
+						}
+						else {
+							for (short allFloors = 8; allFloors <= pos.z; allFloors++) {
+								uint32 positionInt = allFloors + (pos.y << 4) + (pos.x << 18);
+								mapAreas[allFloors + (pos.y / 8) * 16 + (pos.x / 8) * 262144] = positionInt;
+							}
+						}
+					}
 
                     if(type == OTBM_HOUSETILE) {
                         uint32 hId = nodeTile->getU32();

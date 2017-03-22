@@ -417,6 +417,28 @@ void ThingType::draw(const Point& dest, float scaleFactor, int layer, int xPatte
     }
 }
 
+void ThingType::drawToImage(Point dest, int xPattern, int yPattern, int zPattern, ImagePtr image)
+{
+	if (m_null)
+		return;
+
+	for (int l = 0; l < m_layers; ++l) {
+		for (int w = 0; w < m_size.width(); ++w)
+		{
+			int x = dest.x;
+			for (int h = 0; h < m_size.height(); ++h)
+			{
+				int y = dest.y;
+				int dx = x + 32 * (m_size.width() - w - 1) - 32 * (m_size.width() - 1);
+				int dy = y + 32 * (m_size.height() - h - 1) - 32 * (m_size.height() - 1);
+				if (dx >= 0 && dy >= 0)// todo wieksze
+				{
+					image->blit(Point(dx, dy), g_sprites.getSpriteImageCached(m_spritesIndex[getSpriteIndex(w, h, l, xPattern, yPattern, zPattern, 0)]));
+				}
+			}
+		}
+	}
+}
 const TexturePtr& ThingType::getTexture(int animationPhase)
 {
     TexturePtr& animationPhaseTexture = m_textures[animationPhase];

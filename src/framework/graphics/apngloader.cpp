@@ -986,8 +986,13 @@ void save_png(std::stringstream& f, unsigned int width, unsigned int height, int
     if(palsize > 0)
         write_chunk(f, "PLTE", (unsigned char*)(&pal), palsize * 3);
 
-    if(trnssize > 0)
-        write_chunk(f, "tRNS", trns, trnssize);
+	/*
+	 * We cannot write tRNS chunk, if we use alpha channel.
+	 * Class Image uses alpha channel. 'apngloader' has no instances (!).
+	 * After loading any image with tRNS chunk, it saves all images with tRNS!
+	 */
+    //if(trnssize > 0)
+    //    write_chunk(f, "tRNS", trns, trnssize);
 
     zstream1.next_out  = zbuf1;
     zstream1.avail_out = zbuf_size;
