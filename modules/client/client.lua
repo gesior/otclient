@@ -1,5 +1,4 @@
 local musicFilename = "/sounds/startup"
-local musicChannel = g_sounds.getChannel(1)
 
 function setMusic(filename)
   musicFilename = filename
@@ -26,14 +25,6 @@ function reloadScripts()
 end
 
 function startup()
-  -- Play startup music (The Silver Tree, by Mattias Westlund)
-  musicChannel:enqueue(musicFilename, 3)
-  connect(g_game, { onGameStart = function() musicChannel:stop(3) end })
-  connect(g_game, { onGameEnd = function()
-      g_sounds.stopAll()
-      musicChannel:enqueue(musicFilename, 3)
-  end })
-
   -- Check for startup errors
   local errtitle = nil
   local errmsg = nil
@@ -48,7 +39,7 @@ function startup()
     local msgbox = displayErrorBox(errtitle, errmsg)
     msgbox.onOk = function() EnterGame.firstShow() end
   else
-    EnterGame.firstShow()
+    modules.client_terminal.show()
   end
 end
 
@@ -57,7 +48,6 @@ function init()
                    onExit = exit })
 
   g_window.setMinimumSize({ width = 600, height = 480 })
-  g_sounds.preload(musicFilename)
 
   -- initialize in fullscreen mode on mobile devices
   if g_window.getPlatformType() == "X11-EGL" then

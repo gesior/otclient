@@ -1,0 +1,90 @@
+<html>
+	<head>
+		<title>Your Server Map</title>
+		<link rel="stylesheet" href="libs/leaflet-0.7.3.css" /> 
+		<link rel="stylesheet" href="libs/MarkerCluster.Default.css" /> 
+		<link rel="stylesheet" href="libs/MarkerCluster.css" /> 
+		<link rel="stylesheet" href="libs/L.Control.Zoomslider.css" /> 
+		<!--[if lte IE 8]>
+			<link rel="stylesheet" href="lib/L.Control.Zoomslider.ie.css" />
+		<![endif]-->
+		<link rel="stylesheet" href="libs/leaflet.label.css" /> 
+		<link rel="stylesheet" href="libs/bootstrap-3.3.2.min.css">
+		<style>
+			img { 
+				image-rendering: optimizeSpeed; /* NO SMOOTHING*/
+				image-rendering: -moz-crisp-edges;/* Firefox*/
+				image-rendering: -o-crisp-edges;/* Opera*/
+				image-rendering: -webkit-optimize-contrast; /* Chrome (and eventually Safari) */
+				image-rendering: optimize-contrast; /* CSS3 Proposed*/
+				-ms-interpolation-mode: nearest-neighbor; /* IE8+ */
+				image-rendering: pixelated;
+			}
+		</style>
+		<script src="libs/byte64.js"></script>
+		<script src="libs/jquery-1.11.2.min.js"></script>
+		<script src="libs/leaflet-0.7.3.js"></script>
+		<script src="libs/leaflet.markercluster.js"></script>
+		<script src="libs/L.Control.Zoomslider.js"></script>
+		<script src="libs/leaflet.label.js"></script>
+	</head>
+	<body>
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col-xs-8">
+					<div id="streamStatus" style="font-size:18px;color:darkred">Waiting for server stream...</div>
+					<div id="map" style="width: 100%; height: 100%; background-color: black"></div>
+				</div>
+				<div class="col-xs-4">
+					<fieldset>
+						<legend>Choose level</legend>
+						<form class="form-inline" onsubmit="return false;">
+							<button onclick="Map.setFloor(Map.getFloor()+1)" type="submit" class="btn btn-default">-</button>
+							<div class="input-group">
+								<div class="input-group-addon">Floor</div>
+								<select id="floorLevel" class="form-control">
+									<option value="0">7</option>
+									<option value="1">+6</option>
+									<option value="2">+5</option>
+									<option value="3">+4</option>
+									<option value="4">+3</option>
+									<option value="5">+2</option>
+									<option value="6">+1</option>
+									<option value="7">Ground</option>
+									<option value="8">-1</option>
+									<option value="9">-2</option>
+									<option value="10">-3</option>
+									<option value="11">-4</option>
+									<option value="12">-5</option>
+									<option value="13">-6</option>
+									<option value="14">-7</option>
+									<option value="15">-8</option>
+								</select>
+							</div>
+							<button onclick="Map.setFloor(Map.getFloor()-1)" type="submit" class="btn btn-default">+</button>
+						</form>
+					</fieldset>
+					<fieldset>
+						<legend>Fast navigation</legend>
+						<a href="javascript:void(0)" onclick="Map.setCenter({x: 32350, y: 32228, z: 7}, false)">Example link to Thais depot</a>
+					</fieldset>
+					<fieldset id="followPlayerMenu">
+						<legend>Follow player menu</legend>
+						<div id="followStatus"></div><br />
+						<form class="form-inline" id="searchForm">
+							<div class="form-group">
+								<label for="searchPlayerName">Search:</label>
+								<input type="text" class="form-control" id="searchPlayerName" placeholder="Player Name">
+							</div>
+							<button type="submit" class="btn btn-default">Search</button>
+						</form>
+						<ul id="searchResults">
+						</ul>
+					</fieldset>
+				</div>
+			</div>
+		</div>
+		<!-- map.js must be loaded after <div id="map"> element -->
+		<script src="map.js"></script>
+	</body>
+</html>

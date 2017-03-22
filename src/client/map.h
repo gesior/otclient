@@ -149,6 +149,28 @@ public:
     bool loadOtcm(const std::string& fileName);
     void saveOtcm(const std::string& fileName);
 
+	// map image generation functions
+	void initializeMapGenerator(int threadsNumber);
+	int getAreasCount() { return mapAreas.size(); }
+	int getGeneratedAreasCount() { return generatedAreasCount; }
+	void setGeneratedAreasCount(int countOfAreas) { generatedAreasCount = countOfAreas; }
+	void increaseGeneratedAreasCount() { generatedAreasCount++; }
+	void addAreasToGenerator(int startAreaId, int endAreaId);
+	void drawMap(std::string fileName, int sx, int sy, int sz, int size);
+	Position getMinPosition() { return minPosition; }
+	Position getMaxPosition() { return maxPosition; }
+	int getMaxXToLoad() { return maxXToLoad; }
+	void setMaxXToLoad(int newMaxXToLoad) { maxXToLoad = newMaxXToLoad; }
+	int getMinXToLoad() { return minXToLoad; }
+	void setMinXToLoad(int newMinXToLoad) { minXToLoad = newMinXToLoad; }
+	int getMaxXToRender() { return maxXToRender; }
+	void setMaxXToRender(int newMaxXToRender) { maxXToRender = newMaxXToRender; }
+	int getMinXToRender() { return minXToRender; }
+	void setMinXToRender(int newMinXToRender) { minXToRender = newMinXToRender; }
+	std::map<uint32, uint32> getMapTilesPerX() { return mapTilesPerX; }
+	int getShadowPercent() { return shadowPercent; }
+	void setShadowPercent(int newShadowPercent) { shadowPercent = newShadowPercent; }
+
     void loadOtbm(const std::string& fileName);
     void saveOtbm(const std::string& fileName);
 
@@ -267,6 +289,19 @@ private:
     stdext::packed_storage<uint8> m_attribs;
     AwareRange m_awareRange;
     static TilePtr m_nulltile;
+
+	// map image generation attributes
+	int generatedAreasCount;
+	std::unordered_map<uint32, uint32> mapAreas;
+	std::map<uint32, uint32> mapTilesPerX;
+	Position minPosition;
+	Position maxPosition;
+	int maxXToLoad = 0;
+	int minXToLoad = 0;
+	int maxXToRender = 0;
+	int minXToRender = 0;
+	int shadowPercent = 20;
+
 };
 
 extern Map g_map;

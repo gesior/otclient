@@ -171,6 +171,58 @@ void Tile::draw(const Point& dest, float scaleFactor, int drawFlags, LightView *
     }
 }
 
+void Tile::drawToImage(Point dest, ImagePtr image)
+{
+	int x = dest.x;
+	int y = dest.y;
+
+	// first bottom items
+	m_drawElevation = 0;
+	for (const ThingPtr& thing : m_things) {
+
+		if (!thing->isGround() && !thing->isGroundBorder() && !thing->isOnBottom())
+			break;
+
+		if (thing->isGround() || thing->isGroundBorder() || thing->isOnBottom()) {
+			// little hack to fix tables height
+			if (thing->getId() == 2322 || thing->getId() == 2323) {
+				m_drawElevation += thing->getElevation();
+				if (m_drawElevation > Otc::MAX_ELEVATION)
+					m_drawElevation = Otc::MAX_ELEVATION;
+			}
+			thing->drawToImage(Point(x - m_drawElevation, y - m_drawElevation), image);
+		}
+
+		// little hack to fix tables height
+		if (thing->getId() != 2322 && thing->getId() != 2323) {
+			m_drawElevation += thing->getElevation();
+			if (m_drawElevation > Otc::MAX_ELEVATION)
+				m_drawElevation = Otc::MAX_ELEVATION;
+		}
+	}
+
+	// normal items
+	for (auto it = m_things.rbegin(); it != m_things.rend(); ++it) {
+		const ThingPtr& thing = *it;
+
+		if (thing->isOnTop() || thing->isOnBottom() || thing->isGroundBorder() || thing->isGround() || thing->isCreature())
+			break;
+		thing->drawToImage(Point(x - m_drawElevation, y - m_drawElevation), image);
+
+		m_drawElevation += thing->getElevation();
+		if (m_drawElevation > Otc::MAX_ELEVATION)
+			m_drawElevation = Otc::MAX_ELEVATION;
+	}
+
+	// top items
+	for (const ThingPtr& thing : m_things)
+		if (thing->isOnTop())
+		{
+			thing->drawToImage(Point(x - m_drawElevation, y - m_drawElevation), image);
+
+		}
+}
+
 void Tile::clean()
 {
     while(!m_things.empty())

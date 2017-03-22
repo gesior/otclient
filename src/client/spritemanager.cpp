@@ -196,3 +196,33 @@ ImagePtr SpriteManager::getSpriteImage(int id)
     }
 }
 
+class SpriteCache
+{
+public:
+	SpriteCache()
+	{
+		images.resize(g_sprites.getSpritesCount());
+		int i = 1;
+		for (auto& ptr : images) {
+			ptr = g_sprites.getSpriteImage(i++);
+		}
+	}
+	ImagePtr getSpriteImage(int id) const
+	{
+		assert(id <= static_cast<int>(images.size()));
+		if (id <= 0) {
+			return nullptr;
+		}
+		else {
+			return images[id - 1]; //ids start at 1
+		}
+	}
+private:
+	std::vector<ImagePtr> images;
+};
+
+ImagePtr SpriteManager::getSpriteImageCached(int id)
+{
+	static const SpriteCache cache;
+	return cache.getSpriteImage(id);
+}
