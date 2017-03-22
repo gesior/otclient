@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2017 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -63,7 +63,6 @@ public:
     Tile(const Position& position);
 
     void draw(const Point& dest, float scaleFactor, int drawFlags, LightView *lightView = nullptr);
-    void drawToImage(Point dest, ImagePtr image);
 
 public:
     void clean();

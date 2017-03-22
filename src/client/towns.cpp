@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2017 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -61,7 +61,7 @@ const TownPtr& TownManager::getTown(uint32 townId)
 const TownPtr& TownManager::getTownByName(std::string name)
 {
     auto it = std::find_if(m_towns.begin(), m_towns.end(),
-		            [=] (const TownPtr& town) -> bool { return town->getName() == name; } );
+                    [=] (const TownPtr& town) -> bool { return town->getName() == name; } );
     if(it != m_towns.end())
         return *it;
     return m_nullTown;

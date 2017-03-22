@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2017 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -103,13 +103,6 @@ void Client::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_sprites", "getSpritesCount", &SpriteManager::getSpritesCount, &g_sprites);
 
     g_lua.registerSingletonClass("g_map");
-    g_lua.bindSingletonFunction("g_map", "initializeMapGenerator", &Map::initializeMapGenerator, &g_map);
-    g_lua.bindSingletonFunction("g_map", "getGeneratedAreasCount", &Map::getGeneratedAreasCount, &g_map);
-    g_lua.bindSingletonFunction("g_map", "setGeneratedAreasCount", &Map::setGeneratedAreasCount, &g_map);
-    g_lua.bindSingletonFunction("g_map", "getAreasCount", &Map::getAreasCount, &g_map);
-    g_lua.bindSingletonFunction("g_map", "addAreasToGenerator", &Map::addAreaToGenerator, &g_map);
-    g_lua.bindSingletonFunction("g_map", "drawMap", &Map::drawMap, &g_map);
-
     g_lua.bindSingletonFunction("g_map", "isLookPossible", &Map::isLookPossible, &g_map);
     g_lua.bindSingletonFunction("g_map", "isCovered", &Map::isCovered, &g_map);
     g_lua.bindSingletonFunction("g_map", "isCompletelyCovered", &Map::isCompletelyCovered, &g_map);
@@ -308,6 +301,12 @@ void Client::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_game", "browseField", &Game::browseField, &g_game);
     g_lua.bindSingletonFunction("g_game", "seekInContainer", &Game::seekInContainer, &g_game);
     g_lua.bindSingletonFunction("g_game", "getLastWalkDir", &Game::getLastWalkDir, &g_game);
+    g_lua.bindSingletonFunction("g_game", "buyStoreOffer", &Game::buyStoreOffer, &g_game);
+    g_lua.bindSingletonFunction("g_game", "requestTransactionHistory", &Game::requestTransactionHistory, &g_game);
+    g_lua.bindSingletonFunction("g_game", "requestStoreOffers", &Game::requestStoreOffers, &g_game);
+    g_lua.bindSingletonFunction("g_game", "openStore", &Game::openStore, &g_game);
+    g_lua.bindSingletonFunction("g_game", "transferCoins", &Game::transferCoins, &g_game);
+    g_lua.bindSingletonFunction("g_game", "openTransactionHistory", &Game::openTransactionHistory, &g_game);
 
     g_lua.registerSingletonClass("g_shaders");
     g_lua.bindSingletonFunction("g_shaders", "createShader", &ShaderManager::createShader, &g_shaders);
@@ -319,7 +318,7 @@ void Client::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_shaders", "getDefaultMapShader", &ShaderManager::getDefaultMapShader, &g_shaders);
     g_lua.bindSingletonFunction("g_shaders", "getShader", &ShaderManager::getShader, &g_shaders);
 
-    g_lua.bindGlobalFunction("getOufitColor", Outfit::getColor);
+    g_lua.bindGlobalFunction("getOutfitColor", Outfit::getColor);
     g_lua.bindGlobalFunction("getAngleFromPos", Position::getAngleFromPositions);
     g_lua.bindGlobalFunction("getDirectionFromPos", Position::getDirectionFromPositions);
 
@@ -388,9 +387,13 @@ void Client::registerLuaFunctions()
     g_lua.bindClassMemberFunction<Thing>("isTranslucent", &Thing::isTranslucent);
     g_lua.bindClassMemberFunction<Thing>("isFullGround", &Thing::isFullGround);
     g_lua.bindClassMemberFunction<Thing>("isMarketable", &Thing::isMarketable);
+    g_lua.bindClassMemberFunction<Thing>("getMarketData", &Thing::getMarketData);
+    g_lua.bindClassMemberFunction<Thing>("isUsable", &Thing::isUsable);
+    g_lua.bindClassMemberFunction<Thing>("isWrapable", &Thing::isWrapable);
+    g_lua.bindClassMemberFunction<Thing>("isUnwrapable", &Thing::isUnwrapable);
+    g_lua.bindClassMemberFunction<Thing>("isTopEffect", &Thing::isTopEffect);
     g_lua.bindClassMemberFunction<Thing>("isLyingCorpse", &Thing::isLyingCorpse);
     g_lua.bindClassMemberFunction<Thing>("getParentContainer", &Thing::getParentContainer);
-    g_lua.bindClassMemberFunction<Thing>("getMarketData", &Thing::getMarketData);
 
     g_lua.registerClass<House>();
     g_lua.bindClassStaticFunction<House>("create", []{ return HousePtr(new House); });
@@ -542,6 +545,10 @@ void Client::registerLuaFunctions()
     g_lua.bindClassMemberFunction<ThingType>("isCloth", &ThingType::isCloth);
     g_lua.bindClassMemberFunction<ThingType>("isMarketable", &ThingType::isMarketable);
     g_lua.bindClassMemberFunction<ThingType>("getMarketData", &ThingType::getMarketData);
+    g_lua.bindClassMemberFunction<ThingType>("isUsable", &ThingType::isUsable);
+    g_lua.bindClassMemberFunction<ThingType>("isWrapable", &ThingType::isWrapable);
+    g_lua.bindClassMemberFunction<ThingType>("isUnwrapable", &ThingType::isUnwrapable);
+    g_lua.bindClassMemberFunction<ThingType>("isTopEffect", &ThingType::isTopEffect);
     g_lua.bindClassMemberFunction<ThingType>("getSprites", &ThingType::getSprites);
     g_lua.bindClassMemberFunction<ThingType>("hasAttribute", &ThingType::hasAttr);
     g_lua.bindClassMemberFunction<ThingType>("exportImage", &ThingType::exportImage);

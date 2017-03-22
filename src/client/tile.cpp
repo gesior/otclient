@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2017 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -171,43 +171,6 @@ void Tile::draw(const Point& dest, float scaleFactor, int drawFlags, LightView *
     }
 }
 
-void Tile::drawToImage(Point dest, ImagePtr image)
-{
-    int x = dest.x;
-    int y = dest.y;
-    //g_logger.warning(stdext::format("items %d %d %d",x,y, m_things.size()));
-        // first bottom items
-        m_drawElevation = 0;
-        for(const ThingPtr& thing : m_things) {
-            if(!thing->isGround() && !thing->isGroundBorder() && !thing->isOnBottom())
-                break;
-
-            if(thing->isGround() || thing->isGroundBorder() || thing->isOnBottom()) {
-                thing->drawToImage(Point(x - m_drawElevation, y - m_drawElevation), image);
-            }
-            m_drawElevation += thing->getElevation();
-            if(m_drawElevation > Otc::MAX_ELEVATION)
-                m_drawElevation = Otc::MAX_ELEVATION;
-        }
-
-        // normal items
-        for(auto it = m_things.rbegin(); it != m_things.rend(); ++it) {
-            const ThingPtr& thing = *it;
-            if(thing->isOnTop() || thing->isOnBottom() || thing->isGroundBorder() || thing->isGround() || thing->isCreature())
-                break;
-            thing->drawToImage(Point(x - m_drawElevation, y - m_drawElevation), image);
-
-            m_drawElevation += thing->getElevation();
-            if(m_drawElevation > Otc::MAX_ELEVATION)
-                m_drawElevation = Otc::MAX_ELEVATION;
-        }
-
-        // top items
-        for(const ThingPtr& thing : m_things)
-            if(thing->isOnTop()) // TODO: why not minus elevation?
-                thing->drawToImage(Point(x - m_drawElevation, y - m_drawElevation), image);
-}
-
 void Tile::clean()
 {
     while(!m_things.empty())
@@ -232,7 +195,10 @@ void Tile::addThing(const ThingPtr& thing, int stackPos)
         return;
 
     if(thing->isEffect()) {
-        m_effects.push_back(thing->static_self_cast<Effect>());
+        if(thing->isTopEffect())
+            m_effects.insert(m_effects.begin(), thing->static_self_cast<Effect>());
+        else
+            m_effects.push_back(thing->static_self_cast<Effect>());
     } else {
         // priority                                    854
         // 0 - ground,                        -->      -->
@@ -522,7 +488,7 @@ ThingPtr Tile::getTopMultiUseThing()
 
     for(uint i = 0; i < m_things.size(); ++i) {
         ThingPtr thing = m_things[i];
-        if(!thing->isGround() && !thing->isOnBottom() && !thing->isOnTop()) {
+        if(!thing->isGround() && !thing->isGroundBorder() && !thing->isOnBottom() && !thing->isOnTop()) {
             if(i > 0 && thing->isSplash())
                 return m_things[i-1];
             return thing;
@@ -541,6 +507,9 @@ ThingPtr Tile::getTopMultiUseThing()
 bool Tile::isWalkable(bool ignoreCreatures)
 {
     if(!getGround())
+        return false;
+
+    if(g_game.getClientVersion() <= 740 && hasElevation(2))
         return false;
 
     for(const ThingPtr& thing : m_things) {

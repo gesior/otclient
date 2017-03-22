@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2017 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,6 @@ public:
     virtual ~Thing() { }
 
     virtual void draw(const Point& dest, float scaleFactor, bool animate, LightView *lightView = nullptr) { }
-    virtual void drawToImage(Point dest, ImagePtr image) { }
 
     virtual void setId(uint32 id) { }
     void setPosition(const Position& position);
@@ -118,6 +117,10 @@ public:
     bool isIgnoreLook() { return rawGetThingType()->isIgnoreLook(); }
     bool isCloth() { return rawGetThingType()->isCloth(); }
     bool isMarketable() { return rawGetThingType()->isMarketable(); }
+    bool isUsable() { return rawGetThingType()->isUsable(); }
+    bool isWrapable() { return rawGetThingType()->isWrapable(); }
+    bool isUnwrapable() { return rawGetThingType()->isUnwrapable(); }
+    bool isTopEffect() { return rawGetThingType()->isTopEffect(); }
     MarketData getMarketData() { return rawGetThingType()->getMarketData(); }
 
     virtual void onPositionChange(const Position& newPos, const Position& oldPos) { }

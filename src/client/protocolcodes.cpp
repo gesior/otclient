@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2017 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,10 @@ std::map<uint8, uint8> messageModesMap;
 
 void buildMessageModesMap(int version) {
     messageModesMap.clear();
+
+    if(version >= 1094) {
+        messageModesMap[Otc::MessageMana] = 43;
+    }
 
     if(version >= 1055) { // might be 1054
         messageModesMap[Otc::MessageNone] = 0;
@@ -115,7 +119,7 @@ void buildMessageModesMap(int version) {
         messageModesMap[Otc::MessageWhisper]                 = 2;
         messageModesMap[Otc::MessageYell]                    = 3;
         messageModesMap[Otc::MessageNpcTo]                   = 4;
-        messageModesMap[Otc::MessageNpcFrom]                 = 5;
+        messageModesMap[Otc::MessageNpcFromStartBlock]       = 5;
         messageModesMap[Otc::MessagePrivateFrom]             = 6;
         messageModesMap[Otc::MessagePrivateTo]               = 6;
         messageModesMap[Otc::MessageChannel]                 = 7;
@@ -128,7 +132,7 @@ void buildMessageModesMap(int version) {
         messageModesMap[Otc::MessageGamemasterPrivateFrom]   = 14;
         messageModesMap[Otc::MessageGamemasterPrivateTo]     = 14;
         messageModesMap[Otc::MessageChannelHighlight]        = 15;
-        // 16, 17, 18 ??
+        // 16, 17 ??
         messageModesMap[Otc::MessageRed]                     = 18;
         messageModesMap[Otc::MessageMonsterSay]              = 19;
         messageModesMap[Otc::MessageMonsterYell]             = 20;

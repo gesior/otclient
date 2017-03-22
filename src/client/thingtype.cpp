@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2017 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -268,15 +268,16 @@ void ThingType::unserialize(uint16 clientId, ThingCategory category, const FileS
         stdext::throw_exception(stdext::format("corrupt data (id: %d, category: %d, count: %d, lastAttr: %d)",
             m_id, m_category, count, attr));
 
-    uint8 groupCount = 1;
-    if(category == ThingCategoryCreature && g_game.getClientVersion() >= 1057)
-        groupCount = fin->getU8();
+    bool hasFrameGroups = (category == ThingCategoryCreature && g_game.getFeature(Otc::GameIdleAnimations));
+    uint8 groupCount = hasFrameGroups ? fin->getU8() : 1;
+
+    m_animationPhases = 0;
+    int totalSpritesCount = 0;
 
     for(int i = 0; i < groupCount; ++i) {
-        uint8 frameGroup = FrameGroupDefault;
-        if(category == ThingCategoryCreature && g_game.getClientVersion() >= 1057) {
-            frameGroup = fin->getU8();
-        }
+        uint8 frameGroupType = FrameGroupDefault;
+        if(hasFrameGroups)
+            frameGroupType = fin->getU8();
 
         uint8 width = fin->getU8();
         uint8 height = fin->getU8();
@@ -295,21 +296,25 @@ void ThingType::unserialize(uint16 clientId, ThingCategory category, const FileS
             m_numPatternZ = fin->getU8();
         else
             m_numPatternZ = 1;
-        m_animationPhases = fin->getU8();
+        
+        int groupAnimationsPhases = fin->getU8();
+        m_animationPhases += groupAnimationsPhases;
 
-        if(m_animationPhases > 1 && g_game.getFeature(Otc::GameEnhancedAnimations)) {
+        if(groupAnimationsPhases > 1 && g_game.getFeature(Otc::GameEnhancedAnimations)) {
             m_animator = AnimatorPtr(new Animator);
-            m_animator->unserialize(m_animationPhases, fin);
+            m_animator->unserialize(groupAnimationsPhases, fin);
         }
 
-        int totalSprites = m_size.area() * m_layers * m_numPatternX * m_numPatternY * m_numPatternZ * m_animationPhases;
+        int totalSprites = m_size.area() * m_layers * m_numPatternX * m_numPatternY * m_numPatternZ * groupAnimationsPhases;
 
-        if(totalSprites > 4096)
+        if((totalSpritesCount+totalSprites) > 4096)
             stdext::throw_exception("a thing type has more than 4096 sprites");
 
-        m_spritesIndex.resize(totalSprites);
-        for(int i = 0; i < totalSprites; i++)
+        m_spritesIndex.resize((totalSpritesCount+totalSprites));
+        for(int i = totalSpritesCount; i < (totalSpritesCount+totalSprites); i++)
             m_spritesIndex[i] = g_game.getFeature(Otc::GameSpritesU32) ? fin->getU32() : fin->getU16();
+
+        totalSpritesCount += totalSprites;
     }
 
     m_textures.resize(m_animationPhases);
@@ -409,29 +414,6 @@ void ThingType::draw(const Point& dest, float scaleFactor, int layer, int xPatte
         Light light = getLight();
         if(light.intensity > 0)
             lightView->addLightSource(screenRect.center(), scaleFactor, light);
-    }
-}
-
-void ThingType::drawToImage(Point dest, int xPattern, int yPattern, int zPattern, ImagePtr image)
-{
-    if(m_null)
-        return;
-
-    for(int l = 0; l < m_layers; ++l) {
-        for(int w = 0; w < m_size.width(); ++w)
-        {
-            int x = dest.x;
-            for(int h = 0; h < m_size.height(); ++h)
-            {
-                int y = dest.y;
-                int dx = x + 32 * (m_size.width() - w - 1) - 32 * (m_size.width() - 1);
-                int dy = y + 32 * (m_size.height() - h - 1) - 32 * (m_size.height() - 1);
-                if(dx >= 0 && dy >= 0)// todo wieksze
-                {
-                    image->blit(Point(dx, dy), g_sprites.getSpriteImageCached(m_spritesIndex[getSpriteIndex(w, h, l, xPattern, yPattern, zPattern, 0)]));
-                }
-            }
-        }
     }
 }
 

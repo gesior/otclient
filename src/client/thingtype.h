@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2017 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,10 +33,10 @@
 #include <framework/luaengine/luaobject.h>
 #include <framework/net/server.h>
 
-enum FrameGroup : uint8 {
-	FrameGroupIdle = 0,
-	FrameGroupMoving,
-	FrameGroupDefault = FrameGroupIdle
+enum FrameGroupType : uint8 {
+    FrameGroupDefault = 0,
+    FrameGroupIdle = FrameGroupDefault,
+    FrameGroupMoving
 };
 
 enum ThingCategory : uint8 {
@@ -84,6 +84,9 @@ enum ThingAttr : uint8 {
     ThingAttrCloth            = 32,
     ThingAttrMarket           = 33,
     ThingAttrUsable           = 34,
+    ThingAttrWrapable         = 35,
+    ThingAttrUnwrapable       = 36,
+    ThingAttrTopEffect        = 37,
 
     // additional
     ThingAttrOpacity          = 100,
@@ -129,7 +132,6 @@ public:
     void exportImage(std::string fileName);
 
     void draw(const Point& dest, float scaleFactor, int layer, int xPattern, int yPattern, int zPattern, int animationPhase, LightView *lightView = nullptr);
-    void drawToImage(Point dest, int xPattern, int yPattern, int zPattern, ImagePtr image);
 
     uint16 getId() { return m_id; }
     ThingCategory getCategory() { return m_category; }
@@ -194,6 +196,11 @@ public:
     bool isIgnoreLook() { return m_attribs.has(ThingAttrLook); }
     bool isCloth() { return m_attribs.has(ThingAttrCloth); }
     bool isMarketable() { return m_attribs.has(ThingAttrMarket); }
+    bool isUsable() { return m_attribs.has(ThingAttrUsable); }
+    bool isWrapable() { return m_attribs.has(ThingAttrWrapable); }
+    bool isUnwrapable() { return m_attribs.has(ThingAttrUnwrapable); }
+    bool isTopEffect() { return m_attribs.has(ThingAttrTopEffect); }
+
     std::vector<int> getSprites() { return m_spritesIndex; }
 
     // additional

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2017 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,6 @@ public:
     static ImagePtr loadPNG(const std::string& file);
 
     void savePNG(const std::string& fileName);
-    void cut();
 
     void overwriteMask(const Color& maskedColor, const Color& insideColor = Color::white, const Color& outsideColor = Color::alpha);
     void blit(const Point& dest, const ImagePtr& other);
@@ -56,7 +55,6 @@ public:
     uint8* getPixel(int x, int y) { return &m_pixels[(y * m_size.width() + x) * m_bpp]; }
 
 private:
-    bool blited;
     std::vector<uint8> m_pixels;
     Size m_size;
     int m_bpp;

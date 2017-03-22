@@ -45,6 +45,22 @@ Directions = {
   NorthWest = 7
 }
 
+Skill = {
+  Fist = 0,
+  Club = 1,
+  Sword = 2,
+  Axe = 3,
+  Distance = 4,
+  Shielding = 5,
+  Fishing = 6,
+  CriticalChance = 7,
+  CriticalDamage = 8,
+  LifeLeechChance = 9,
+  LifeLeechAmount = 10,
+  ManaLeechChance = 11,
+  ManaLeechAmount = 12
+}
+
 North = Directions.North
 East = Directions.East
 South = Directions.South
@@ -131,6 +147,12 @@ GameAuthenticator = 67
 GameUnjustifiedPoints = 68
 GameSessionKey = 69
 GameDeathType = 70
+GameIdleAnimations = 71
+GameKeepUnawareTiles = 72
+GameIngameStore = 73
+GameIngameStoreHighlights = 74
+GameIngameStoreServiceType = 75
+GameAdditionalSkills = 76
 
 TextColors = {
   red       = '#f55e5e', --'#c83200'
@@ -187,17 +209,18 @@ MessageModes = {
   TutorialHint            = 38,
   Thankyou                = 39,
   Market                  = 40,
-  BeyondLast              = 41,
-  MonsterYell             = 42,
-  MonsterSay              = 43,
-  Red                     = 44,
-  Blue                    = 45,
-  RVRChannel              = 46,
-  RVRAnswer               = 47,
-  RVRContinue             = 48,
-  GameHighlight           = 49,
-  NpcFromStartBlock       = 50,
-  Last                    = 51,
+  Mana                    = 41,
+  BeyondLast              = 42,
+  MonsterYell             = 43,
+  MonsterSay              = 44,
+  Red                     = 45,
+  Blue                    = 46,
+  RVRChannel              = 47,
+  RVRAnswer               = 48,
+  RVRContinue             = 49,
+  GameHighlight           = 50,
+  NpcFromStartBlock       = 51,
+  Last                    = 52,
   Invalid                 = 255,
 }
 
@@ -214,7 +237,7 @@ CIPSOFT_RSA = "1321277432058722840622950990822933849527763264961655079678763618"
               "88792221429527047321331896351555606801473202394175817"
 
 -- set to the latest Tibia.pic signature to make otclient compatible with official tibia
-PIC_SIGNATURE = 0x542100C1
+PIC_SIGNATURE = 0x56C5DDE7
 
 OsTypes = {
   Linux = 1,
@@ -276,6 +299,27 @@ Blessings = {
 DeathType = {
   Regular = 0,
   Blessed = 1
+}
+
+ProductType = {
+  Other = 0,
+  NameChange = 1
+}
+
+StoreErrorType = {
+  NoError = -1,
+  PurchaseError = 0,
+  NetworkError = 1,
+  HistoryError = 2,
+  TransferError = 3,
+  Information = 4
+}
+
+StoreState = {
+  None = 0,
+  New = 1,
+  Sale = 2,
+  Timed = 3
 }
 
 -- @}

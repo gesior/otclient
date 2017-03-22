@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2017 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -209,7 +209,7 @@ std::string Crypt::_encrypt(const std::string& decrypted_string, bool useMachine
 std::string Crypt::_decrypt(const std::string& encrypted_string, bool useMachineUUID)
 {
     std::string decoded = base64Decode(encrypted_string);
-    std::string tmp = xorCrypt(base64Decode(encrypted_string), getCryptKey(useMachineUUID));
+    std::string tmp = xorCrypt(decoded, getCryptKey(useMachineUUID));
     if(tmp.length() >= 4) {
         uint32 readsum = stdext::readULE32((const uint8*)tmp.c_str());
         std::string decrypted_string = tmp.substr(4);
@@ -307,13 +307,17 @@ std::string Crypt::sha512Encode(const std::string& decoded_string, bool upperCas
 
 void Crypt::rsaGenerateKey(int bits, int e)
 {
-    RSA *rsa = RSA_generate_key(bits, e, nullptr, nullptr);
+    RSA *rsa = RSA_new();
+    BIGNUM *ebn = BN_new();
+    BN_set_word(ebn, e);
+    RSA_generate_key_ex(rsa, bits, ebn, nullptr);
     g_logger.info(stdext::format("%d bits (%d bytes) RSA key generated", bits, bits / 8));
     g_logger.info(std::string("p = ") + BN_bn2dec(m_rsa->p));
     g_logger.info(std::string("q = ") + BN_bn2dec(m_rsa->q));
     g_logger.info(std::string("d = ") + BN_bn2dec(m_rsa->d));
     g_logger.info(std::string("n = ") + BN_bn2dec(m_rsa->n));
     g_logger.info(std::string("e = ") + BN_bn2dec(m_rsa->e));
+    BN_clear_free(ebn);
     RSA_free(rsa);
 }
 

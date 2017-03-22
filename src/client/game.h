@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2017 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -173,7 +173,7 @@ public:
     void stop();
 
     // item related
-    void look(const ThingPtr& thing);
+    void look(const ThingPtr& thing, bool isBattleList = false);
     void move(const ThingPtr &thing, const Position& toPos, int count);
     void moveToParentContainer(const ThingPtr& thing, int count);
     void rotate(const ThingPtr& thing);
@@ -287,6 +287,14 @@ public:
     // >= 984 browse field
     void browseField(const Position& position);
     void seekInContainer(int cid, int index);
+
+    // >= 1080 ingame store
+    void buyStoreOffer(int offerId, int productType, const std::string& name = "");
+    void requestTransactionHistory(int page, int entriesPerPage);
+    void requestStoreOffers(const std::string& categoryName, int serviceType = 0);
+    void openStore(int serviceType = 0, const std::string& category = "");
+    void transferCoins(const std::string& recipient, int amount);
+    void openTransactionHistory(int entriesPerPage);
 
     //void reportRuleViolation2();
     void ping();

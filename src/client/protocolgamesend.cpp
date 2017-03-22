@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2017 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -862,6 +862,79 @@ void ProtocolGame::sendSeekInContainer(int cid, int index)
     msg->addU16(index);
     send(msg);
 }
+
+void ProtocolGame::sendBuyStoreOffer(int offerId, int productType, const std::string& name)
+{
+    OutputMessagePtr msg(new OutputMessage);
+    msg->addU8(Proto::ClientBuyStoreOffer);
+    msg->addU32(offerId);
+    msg->addU8(productType);
+
+    if(productType == Otc::ProductTypeNameChange)
+        msg->addString(name);
+
+    send(msg);
+}
+
+void ProtocolGame::sendRequestTransactionHistory(int page, int entriesPerPage)
+{
+    OutputMessagePtr msg(new OutputMessage);
+    msg->addU8(Proto::ClientRequestTransactionHistory);
+    if(g_game.getClientVersion() <= 1096) {
+        msg->addU16(page);
+        msg->addU32(entriesPerPage);
+    } else {
+        msg->addU32(page);
+        msg->addU8(entriesPerPage);
+    }
+
+    send(msg);
+}
+
+void ProtocolGame::sendRequestStoreOffers(const std::string& categoryName, int serviceType)
+{
+    OutputMessagePtr msg(new OutputMessage);
+    msg->addU8(Proto::ClientRequestStoreOffers);
+
+    if(g_game.getFeature(Otc::GameIngameStoreServiceType)) {
+        msg->addU8(serviceType);
+    }
+    msg->addString(categoryName);
+
+    send(msg);
+}
+
+void ProtocolGame::sendOpenStore(int serviceType, const std::string& category)
+{
+    OutputMessagePtr msg(new OutputMessage);
+    msg->addU8(Proto::ClientOpenStore);
+
+    if(g_game.getFeature(Otc::GameIngameStoreServiceType)) {
+        msg->addU8(serviceType);
+        msg->addString(category);
+    }
+
+    send(msg);
+}
+
+void ProtocolGame::sendTransferCoins(const std::string& recipient, int amount)
+{
+    OutputMessagePtr msg(new OutputMessage);
+    msg->addU8(Proto::ClientTransferCoins);
+    msg->addString(recipient);
+    msg->addU16(amount);
+    send(msg);
+}
+
+void ProtocolGame::sendOpenTransactionHistory(int entriesPerPage)
+{
+    OutputMessagePtr msg(new OutputMessage);
+    msg->addU8(Proto::ClientOpenTransactionHistory);
+    msg->addU8(entriesPerPage);
+
+    send(msg);
+}
+
 
 void ProtocolGame::sendChangeMapAwareRange(int xrange, int yrange)
 {

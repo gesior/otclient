@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2017 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -149,14 +149,6 @@ public:
     bool loadOtcm(const std::string& fileName);
     void saveOtcm(const std::string& fileName);
 
-    void initializeMapGenerator(int threadsNumber);
-    int getAreasCount() { return mapAreas.size(); }
-    int getGeneratedAreasCount() { return generatedAreasCount; }
-    void setGeneratedAreasCount(int countOfAreas) { generatedAreasCount = countOfAreas; }
-    void increaseGeneratedAreasCount() { generatedAreasCount++; }
-    void addAreaToGenerator(int startAreaId, int endAreaId);
-    void drawMap(std::string fileName, int sx, int sy, int sz, int size);
-
     void loadOtbm(const std::string& fileName);
     void saveOtbm(const std::string& fileName);
 
@@ -251,7 +243,6 @@ public:
 
     std::tuple<std::vector<Otc::Direction>, Otc::PathFindResult> findPath(const Position& start, const Position& goal, int maxComplexity, int flags = 0);
 
-    std::unordered_map<uint32, uint32> mapAreas;
 private:
     void removeUnawareThings();
     uint getBlockIndex(const Position& pos) { return ((pos.y / BLOCK_SIZE) * (65536 / BLOCK_SIZE)) + (pos.x / BLOCK_SIZE); }
@@ -276,8 +267,6 @@ private:
     stdext::packed_storage<uint8> m_attribs;
     AwareRange m_awareRange;
     static TilePtr m_nulltile;
-
-    int generatedAreasCount;
 };
 
 extern Map g_map;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2017 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -88,17 +88,6 @@ void Item::draw(const Point& dest, float scaleFactor, bool animate, LightView *l
     /// screw up the whole rendering.
     if(m_color != Color::alpha)
         g_painter->resetColor();
-}
-
-void Item::drawToImage(Point dest, ImagePtr image)
-{
-    if(m_clientId == 0)
-        return;
-
-    int xPattern = 0, yPattern = 0, zPattern = 0;
-    calculatePatterns(xPattern, yPattern, zPattern);
-
-    rawGetThingType()->drawToImage(dest, xPattern, yPattern, zPattern, image);
 }
 
 void Item::setId(uint32 id)

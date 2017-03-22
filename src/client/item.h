@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2017 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -83,7 +83,6 @@ public:
     static ItemPtr createFromOtb(int id);
 
     void draw(const Point& dest, float scaleFactor, bool animate, LightView *lightView = nullptr);
-    void drawToImage(Point dest, ImagePtr image);
 
     void setId(uint32 id);
     void setOtbId(uint16 id);

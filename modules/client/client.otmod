@@ -15,8 +15,8 @@ Module
     - client_topmenu
     - client_background
     - client_options
-    - client_terminal
     - client_entergame
+    - client_terminal
     - client_modulemanager
     - client_serverlist
     - client_stats

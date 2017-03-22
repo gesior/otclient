@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2017 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -64,7 +64,7 @@ void House::removeDoorById(uint32 doorId)
 {
     if(doorId >= m_lastDoorId)
         stdext::throw_exception(stdext::format("Failed to remove door of id %d (would overflow), max id: %d",
-				 doorId, m_lastDoorId));
+                doorId, m_lastDoorId));
     m_doors[doorId] = nullptr;
 }
 

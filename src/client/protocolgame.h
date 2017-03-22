@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2017 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -113,6 +113,12 @@ public:
     void sendAnswerModalDialog(int dialog, int button, int choice);
     void sendBrowseField(const Position& position);
     void sendSeekInContainer(int cid, int index);
+    void sendBuyStoreOffer(int offerId, int productType, const std::string& name);
+    void sendRequestTransactionHistory(int page, int entriesPerPage);
+    void sendRequestStoreOffers(const std::string& categoryName, int serviceType);
+    void sendOpenStore(int serviceType, const std::string &category);
+    void sendTransferCoins(const std::string& recipient, int amount);
+    void sendOpenTransactionHistory(int entiresPerPage);
 
     // otclient only
     void sendChangeMapAwareRange(int xrange, int yrange);
@@ -128,6 +134,16 @@ public:
     void addPosition(const OutputMessagePtr& msg, const Position& position);
 
 private:
+    void parseStoreButtonIndicators(const InputMessagePtr& msg);
+    void parseSetStoreDeepLink(const InputMessagePtr& msg);
+    void parseStore(const InputMessagePtr& msg);
+    void parseStoreError(const InputMessagePtr& msg);
+    void parseStoreTransactionHistory(const InputMessagePtr& msg);
+    void parseStoreOffers(const InputMessagePtr& msg);
+    void parseCompleteStorePurchase(const InputMessagePtr& msg);
+    void parseRequestPurchaseData(const InputMessagePtr& msg);
+    void parseCoinBalance(const InputMessagePtr& msg);
+    void parseCoinBalanceUpdating(const InputMessagePtr& msg);
     void parseBlessings(const InputMessagePtr& msg);
     void parseUnjustifiedStats(const InputMessagePtr& msg);
     void parsePvpSituations(const InputMessagePtr& msg);

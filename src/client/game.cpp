@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2017 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -778,12 +778,12 @@ void Game::stop()
     m_protocolGame->sendStop();
 }
 
-void Game::look(const ThingPtr& thing)
+void Game::look(const ThingPtr& thing, bool isBattleList)
 {
     if(!canPerformGameAction() || !thing)
         return;
 
-    if(thing->isCreature() && m_protocolVersion >= 961)
+    if(thing->isCreature() && isBattleList && m_protocolVersion >= 961)
         m_protocolGame->sendLookCreature(thing->getId());
     else
         m_protocolGame->sendLook(thing->getPosition(), thing->getId(), thing->getStackPos());
@@ -1395,6 +1395,48 @@ void Game::seekInContainer(int cid, int index)
     m_protocolGame->sendSeekInContainer(cid, index);
 }
 
+void Game::buyStoreOffer(int offerId, int productType, const std::string& name)
+{
+    if(!canPerformGameAction())
+        return;
+    m_protocolGame->sendBuyStoreOffer(offerId, productType, name);
+}
+
+void Game::requestTransactionHistory(int page, int entriesPerPage)
+{
+    if(!canPerformGameAction())
+        return;
+    m_protocolGame->sendRequestTransactionHistory(page, entriesPerPage);
+}
+
+void Game::requestStoreOffers(const std::string& categoryName, int serviceType)
+{
+    if(!canPerformGameAction())
+        return;
+    m_protocolGame->sendRequestStoreOffers(categoryName, serviceType);
+}
+
+void Game::openStore(int serviceType, const std::string& category)
+{
+    if(!canPerformGameAction())
+        return;
+    m_protocolGame->sendOpenStore(serviceType, category);
+}
+
+void Game::transferCoins(const std::string& recipient, int amount)
+{
+    if(!canPerformGameAction())
+        return;
+    m_protocolGame->sendTransferCoins(recipient, amount);
+}
+
+void Game::openTransactionHistory(int entriesPerPage)
+{
+    if(!canPerformGameAction())
+        return;
+    m_protocolGame->sendOpenTransactionHistory(entriesPerPage);
+}
+
 void Game::ping()
 {
     if(!m_protocolGame || !m_protocolGame->isConnected())
@@ -1439,7 +1481,7 @@ bool Game::canPerformGameAction()
     // - we have a game protocol
     // - the game protocol is connected
     // - its not a bot action
-    return m_online && m_localPlayer && !m_dead && m_protocolGame && m_protocolGame->isConnected() && checkBotProtection();
+    return m_online && m_localPlayer && !m_localPlayer->isDead() && !m_dead && m_protocolGame && m_protocolGame->isConnected() && checkBotProtection();
 }
 
 void Game::setProtocolVersion(int version)
@@ -1450,7 +1492,7 @@ void Game::setProtocolVersion(int version)
     if(isOnline())
         stdext::throw_exception("Unable to change protocol version while online");
 
-    if(version != 0 && (version < 740 || version > 1076))
+    if(version != 0 && (version < 740 || version > 1099))
         stdext::throw_exception(stdext::format("Protocol version %d not supported", version));
 
     m_protocolVersion = version;
@@ -1468,7 +1510,7 @@ void Game::setClientVersion(int version)
     if(isOnline())
         stdext::throw_exception("Unable to change client version while online");
 
-    if(version != 0 && (version < 740 || version > 1076))
+    if(version != 0 && (version < 740 || version > 1099))
         stdext::throw_exception(stdext::format("Client version %d not supported", version));
 
     m_features.reset();
@@ -1600,6 +1642,10 @@ void Game::setClientVersion(int version)
         enableFeature(Otc::GameDeathType);
     }
 
+    if(version >= 1057) {
+        enableFeature(Otc::GameIdleAnimations);
+    }
+
     if(version >= 1061) {
         enableFeature(Otc::GameOGLInformation);
     }
@@ -1614,6 +1660,22 @@ void Game::setClientVersion(int version)
 
     if(version >= 1074) {
         enableFeature(Otc::GameSessionKey);
+    }
+
+    if(version >= 1080) {
+        enableFeature(Otc::GameIngameStore);
+    }
+
+    if(version >= 1092) {
+        enableFeature(Otc::GameIngameStoreServiceType);
+    }
+
+    if(version >= 1093) {
+        enableFeature(Otc::GameIngameStoreHighlights);
+    }
+
+    if(version >= 1094) {
+        enableFeature(Otc::GameAdditionalSkills);
     }
 
     m_clientVersion = version;

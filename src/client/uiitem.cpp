@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2017 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -63,8 +63,9 @@ void UIItem::drawSelf(Fw::DrawPane drawPane)
             g_painter->setColor(Color(231, 231, 231));
             m_font->drawText(count, Rect(m_rect.topLeft(), m_rect.bottomRight() - Point(3, 0)), Fw::AlignBottomRight);
         }
+
         if(m_showId)
-	    m_font->drawText(stdext::to_string(m_item->getServerId()), m_rect, Fw::AlignBottomRight);
+            m_font->drawText(stdext::to_string(m_item->getServerId()), m_rect, Fw::AlignBottomRight);
     }
 
     drawBorder(m_rect);
@@ -98,7 +99,7 @@ void UIItem::onStyleApply(const std::string& styleName, const OTMLNodePtr& style
             setItemVisible(node->value<bool>());
         else if(node->tag() == "virtual")
             setVirtual(node->value<bool>());
-	else if(node->tag() == "show-id")
-	    m_showId = node->value<bool>();
+        else if(node->tag() == "show-id")
+            m_showId = node->value<bool>();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2017 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -55,11 +55,11 @@
 /// NB: These are used when speed is need most; do not use in normal
 /// code, they may slow down stuff.
 #if defined(__clang__) || defined(__GNUC__)
-#define likely(x) 	__builtin_expect(!!(x), 1)
-#define unlikely(x) 	__builtin_expect(!!(x), 0)
+#define likely(x)     __builtin_expect(!!(x), 1)
+#define unlikely(x)    __builtin_expect(!!(x), 0)
 #else
-#define likely(x) 	(x)
-#define unlikely(x) 	(x)
+#define likely(x)    (x)
+#define unlikely(x)    (x)
 #endif
 
 #if !defined(_MSC_VER) && !defined(__GXX_EXPERIMENTAL_CXX0X__)

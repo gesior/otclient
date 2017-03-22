@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015 OTClient <https://github.com/edubart/otclient>
+ * Copyright (c) 2010-2017 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,9 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <boost/lockfree/spsc_queue.hpp>
-#include <map>
-#include <iostream>
+
 #include "map.h"
 #include "tile.h"
 #include "game.h"
@@ -33,223 +31,6 @@
 #include <framework/core/binarytree.h>
 #include <framework/xml/tinyxml.h>
 #include <framework/ui/uiwidget.h>
-#include <framework/graphics/image.h>
-
-void mapPartGenerator(int minx, int miny, int minz, int maxx, int maxy, int maxz)
-{
-    for(int z = minz; z <= maxz; z++)
-    {
-        for(int x = minx; x <= maxx; x++)
-        {
-            for(int y = miny; y <= maxy; y++)
-            {
-                std::stringstream path;
-                path << "map/"<< x << "_" << y << "_" << z << ".png";
-                g_map.drawMap(path.str(), x * 8, y * 8, z, 8);
-                g_map.increaseGeneratedAreasCount();
-            }
-        }
-    }
-}
-
-class MapGenWorkItem
-{
-public:
-    static MapGenWorkItem* make(int minx, int miny, int minz, int maxx, int maxy, int maxz)
-    {
-        return new MapGenWorkItem(minx, miny, minz, maxx, maxy, maxz);
-    }
-
-    void execute()
-    {
-        mapPartGenerator(minx, miny, minz, maxx, maxy, maxz);
-    }
-
-private:
-    int minx, miny, minz, maxx, maxy, maxz;
-    MapGenWorkItem(int minx, int miny, int minz, int maxx, int maxy, int maxz):
-        minx(minx),
-        miny(miny),
-        minz(minz),
-        maxx(maxx),
-        maxy(maxy),
-        maxz(maxz) {}
-};
-
-class Monitor
-{
-    public:
-        void wait()
-        {
-            std::unique_lock<std::mutex> lock {mtx};
-            cv.wait(lock);
-        }
-
-        void notify()
-        {
-            cv.notify_one();
-        }
-    private:
-        std::mutex mtx;
-        std::condition_variable cv;
-};
-
-template <typename WorkItemType>
-class WorkQueue
-{
-public:
-    WorkQueue(int workerCount):
-        workerCount(workerCount),
-        workers(new Worker[workerCount]) {}
-
-    ~WorkQueue() {
-        signalCompletion();
-    }
-
-    void start(int workerCount) {
-        signalCompletion();
-        this->workerCount = workerCount;
-        lastWorkerPushed = 0;
-        workers.reset(new Worker[workerCount]);
-    }
-
-    bool completed() const {
-        return workers;
-    }
-
-    bool tryPush(WorkItemType* workItem) {
-        lastWorkerPushed = (lastWorkerPushed + 1) % workerCount; //Round-Robin work scheduling
-        auto ret = workers[lastWorkerPushed].workQueue.push(workItem);
-        if (ret) {
-            workers[lastWorkerPushed].notify();
-        }
-        return ret;
-    }
-
-    void signalCompletion() {
-        if (workers) {
-            for(int i = 0; i < workerCount; ++i) {
-                while(workers[i].workQueue.push(nullptr));
-                workers[i].notify();
-            }
-            joinAll();
-        }
-    }
-
-    void joinAll() {
-        workers.reset();
-    }
-
-    int workerCount;
-    int lastWorkerPushed {0};
-private:
-    struct WorkItemHolder {
-        WorkItemHolder() = default;
-        WorkItemHolder(const WorkItemHolder&) = delete;
-        WorkItemHolder& operator=(const WorkItemHolder&) = delete;
-        ~WorkItemHolder() {
-            delete ptr;
-        }
-        WorkItemType* ptr {nullptr};
-    };
-
-    struct Worker : Monitor
-    {
-        typedef boost::lockfree::spsc_queue<WorkItemType*> WorkItemQueue;
-        Worker():
-            workQueue(maxItemsPerWorker),
-            thread(&Worker::workerLoop, this) {}
-
-        void workerLoop() {
-            while(true) {
-                WorkItemHolder work;
-                if(workQueue.pop(work.ptr)) {
-                    if(work.ptr == nullptr) {
-                        return;
-                    } else {
-                        work.ptr->execute();
-                    }
-                } else {
-                    wait();
-                }
-            }
-        }
-
-        ~Worker() {
-            if(thread.joinable()) {
-                thread.join();
-            }
-        }
-
-        WorkItemQueue workQueue;
-        std::thread thread;
-        static constexpr auto maxItemsPerWorker = 1000;
-    };
-
-    std::unique_ptr<Worker[]> workers;
-};
-
-WorkQueue<MapGenWorkItem> queue (1);
-void Map::initializeMapGenerator(int threadsNumber)
-{
-    queue.start(threadsNumber);
-    g_resources.makeDir("map");
-    g_logger.debug(stdext::format("Started %d threads!", queue.workerCount));
-}
-
-
-void Map::addAreaToGenerator(int startAreaId, int endAreaId)
-{
-    typedef std::unordered_map<uint32, uint32>::iterator it_type;
-    int i = 0;
-    uint32 position, x, y, z;
-    for(it_type iterator = mapAreas.begin(); iterator != mapAreas.end(); iterator++)
-    {
-        if(startAreaId <= i && i <= endAreaId)
-        {
-            position = iterator->first;
-            z = position & 0x0F;
-            y = (position >> 4) & 0x3FFF;
-            x = (position >> 18) & 0x3FFF;
-            while (!queue.tryPush(MapGenWorkItem::make(x, y, z, x, y, z)));
-        }
-        i++;
-    }
-}
-
-void Map::drawMap(std::string fileName, int sx, int sy, int sz, int size)
-{
-    Position pros;
-    ImagePtr image(new Image(Size(32 * (size+2), 32 * (size+2))));
-        pros.z = sz;
-        for(int x = 0; x <= size; x++)
-        {
-            for(int y = 0; y <= size; y++)
-            {
-                pros.x = sx + x;
-                pros.y = sy + y;
-                if (const TilePtr& tile = getTile(pros))
-                {
-                    Point a((x+1) * 32, (y+1) * 32);
-                    tile->drawToImage(a, image);
-                }
-                else
-                {
-					/*
-					logging is useless [if you debug script and genereate some maps like 100x100 you can test it],
-					all messages will appear in console at end of map generation (so you cannot see 'progress')
-					and freez client for longer then normal generation time [for rl map when it will try to show milion messages] :P
-					*/
-                    //g_logger.warning(stdext::format("not exist %d %d",x,y));
-                }
-            }
-        }
-
-        // reduce image size to size from argument (for generation time image is 2 tiles bigger, because of 64x64 items)
-        image->cut();
-        // save to file, save function is modified and will ignore empty images!
-        image->savePNG(fileName);
-}
 
 void Map::loadOtbm(const std::string& fileName)
 {
@@ -315,11 +96,6 @@ void Map::loadOtbm(const std::string& fileName)
             }
         }
 
-        int minx, miny, minz, maxx, maxy, maxz;
-        minx = miny = minz = 999999;
-        maxx = maxy = maxz = -5;
-        mapAreas.clear();
-
         for(const BinaryTreePtr& nodeMapData : node->getChildren()) {
             uint8 mapDataType = nodeMapData->getU8();
             if(mapDataType == OTBM_TILE_AREA) {
@@ -336,35 +112,7 @@ void Map::loadOtbm(const std::string& fileName)
                     HousePtr house = nullptr;
                     uint32 flags = TILESTATE_NONE;
                     Position pos = basePos + nodeTile->getPoint();
-                    uint32 positionInt = pos.z + (pos.y << 4) + (pos.x << 18);
-                    //std::stringstream positionString;
-                    //positionString << pos.x << "_" << pos.y << "_" << pos.z;
-                    mapAreas[pos.z + (pos.y / 8) * 16 + (pos.x / 8) * 262144] = positionInt;
 
-                    if(pos.x < minx)
-                    {
-                        minx = pos.x;
-                    }
-                    if(pos.y < miny)
-                    {
-                        miny = pos.y;
-                    }
-                    if(pos.z < minz)
-                    {
-                        minz = pos.z;
-                    }
-                    if(pos.x > maxx)
-                    {
-                        maxx = pos.x;
-                    }
-                    if(pos.y > maxy)
-                    {
-                        maxy = pos.y;
-                    }
-                    if(pos.z > maxz)
-                    {
-                        maxz = pos.z;
-                    }
                     if(type == OTBM_HOUSETILE) {
                         uint32 hId = nodeTile->getU32();
                         TilePtr tile = getOrCreateTile(pos);
@@ -473,7 +221,6 @@ void Map::loadOtbm(const std::string& fileName)
             } else
                 stdext::throw_exception(stdext::format("Unknown map data node %d", (int)mapDataType));
         }
-        g_logger.debug(stdext::format("Generated list of '%d' images to generate. Now just type: generateMap()", mapAreas.size()));
 
         fin->close();
     } catch(std::exception& e) {
