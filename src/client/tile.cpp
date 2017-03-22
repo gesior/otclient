@@ -171,43 +171,6 @@ void Tile::draw(const Point& dest, float scaleFactor, int drawFlags, LightView *
     }
 }
 
-void Tile::drawToImage(Point dest, ImagePtr image)
-{
-    int x = dest.x;
-    int y = dest.y;
-    //g_logger.warning(stdext::format("items %d %d %d",x,y, m_things.size()));
-        // first bottom items
-        m_drawElevation = 0;
-        for(const ThingPtr& thing : m_things) {
-            if(!thing->isGround() && !thing->isGroundBorder() && !thing->isOnBottom())
-                break;
-
-            if(thing->isGround() || thing->isGroundBorder() || thing->isOnBottom()) {
-                thing->drawToImage(Point(x - m_drawElevation, y - m_drawElevation), image);
-            }
-            m_drawElevation += thing->getElevation();
-            if(m_drawElevation > Otc::MAX_ELEVATION)
-                m_drawElevation = Otc::MAX_ELEVATION;
-        }
-
-        // normal items
-        for(auto it = m_things.rbegin(); it != m_things.rend(); ++it) {
-            const ThingPtr& thing = *it;
-            if(thing->isOnTop() || thing->isOnBottom() || thing->isGroundBorder() || thing->isGround() || thing->isCreature())
-                break;
-            thing->drawToImage(Point(x - m_drawElevation, y - m_drawElevation), image);
-
-            m_drawElevation += thing->getElevation();
-            if(m_drawElevation > Otc::MAX_ELEVATION)
-                m_drawElevation = Otc::MAX_ELEVATION;
-        }
-
-        // top items
-        for(const ThingPtr& thing : m_things)
-            if(thing->isOnTop()) // TODO: why not minus elevation?
-                thing->drawToImage(Point(x - m_drawElevation, y - m_drawElevation), image);
-}
-
 void Tile::clean()
 {
     while(!m_things.empty())
@@ -544,6 +507,9 @@ ThingPtr Tile::getTopMultiUseThing()
 bool Tile::isWalkable(bool ignoreCreatures)
 {
     if(!getGround())
+        return false;
+
+    if(g_game.getClientVersion() <= 740 && hasElevation(2))
         return false;
 
     for(const ThingPtr& thing : m_things) {

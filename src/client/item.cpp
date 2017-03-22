@@ -90,17 +90,6 @@ void Item::draw(const Point& dest, float scaleFactor, bool animate, LightView *l
         g_painter->resetColor();
 }
 
-void Item::drawToImage(Point dest, ImagePtr image)
-{
-    if(m_clientId == 0)
-        return;
-
-    int xPattern = 0, yPattern = 0, zPattern = 0;
-    calculatePatterns(xPattern, yPattern, zPattern);
-
-    rawGetThingType()->drawToImage(dest, xPattern, yPattern, zPattern, image);
-}
-
 void Item::setId(uint32 id)
 {
     if(!g_things.isValidDatId(id, ThingCategoryItem))

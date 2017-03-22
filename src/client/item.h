@@ -83,7 +83,6 @@ public:
     static ItemPtr createFromOtb(int id);
 
     void draw(const Point& dest, float scaleFactor, bool animate, LightView *lightView = nullptr);
-    void drawToImage(Point dest, ImagePtr image);
 
     void setId(uint32 id);
     void setOtbId(uint16 id);

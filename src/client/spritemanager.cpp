@@ -124,36 +124,6 @@ void SpriteManager::unload()
     m_spritesFile = nullptr;
 }
 
-class SpriteCache
-{
-public:
-    SpriteCache()
-    {
-        images.resize(g_sprites.getSpritesCount());
-        int i = 1;
-        for(auto& ptr : images) {
-            ptr = g_sprites.getSpriteImage(i++);
-        }
-    }
-    ImagePtr getSpriteImage(int id) const
-    {
-        assert(id <= static_cast<int>(images.size()));
-        if(id <= 0) {
-            return nullptr;
-        } else {           
-            return images[id-1]; //ids start at 1
-        }
-    }
-private:
-    std::vector<ImagePtr> images;
-};
-
-ImagePtr SpriteManager::getSpriteImageCached(int id)
-{
-    static const SpriteCache cache;
-    return cache.getSpriteImage(id);
-}
-
 ImagePtr SpriteManager::getSpriteImage(int id)
 {
     try {
@@ -218,6 +188,7 @@ ImagePtr SpriteManager::getSpriteImage(int id)
             pixels[writePos + 3] = 0x00;
             writePos += 4;
         }
+
         return image;
     } catch(stdext::exception& e) {
         g_logger.error(stdext::format("Failed to get sprite id %d: %s", id, e.what()));

@@ -48,7 +48,6 @@ public:
     int getSpritesCount() { return m_spritesCount; }
 
     ImagePtr getSpriteImage(int id);
-    ImagePtr getSpriteImageCached(int id);
     bool isLoaded() { return m_loaded; }
 
 private:

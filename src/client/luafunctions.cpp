@@ -103,13 +103,6 @@ void Client::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_sprites", "getSpritesCount", &SpriteManager::getSpritesCount, &g_sprites);
 
     g_lua.registerSingletonClass("g_map");
-    g_lua.bindSingletonFunction("g_map", "initializeMapGenerator", &Map::initializeMapGenerator, &g_map);
-    g_lua.bindSingletonFunction("g_map", "getGeneratedAreasCount", &Map::getGeneratedAreasCount, &g_map);
-    g_lua.bindSingletonFunction("g_map", "setGeneratedAreasCount", &Map::setGeneratedAreasCount, &g_map);
-    g_lua.bindSingletonFunction("g_map", "getAreasCount", &Map::getAreasCount, &g_map);
-    g_lua.bindSingletonFunction("g_map", "addAreasToGenerator", &Map::addAreaToGenerator, &g_map);
-    g_lua.bindSingletonFunction("g_map", "drawMap", &Map::drawMap, &g_map);
-
     g_lua.bindSingletonFunction("g_map", "isLookPossible", &Map::isLookPossible, &g_map);
     g_lua.bindSingletonFunction("g_map", "isCovered", &Map::isCovered, &g_map);
     g_lua.bindSingletonFunction("g_map", "isCompletelyCovered", &Map::isCompletelyCovered, &g_map);

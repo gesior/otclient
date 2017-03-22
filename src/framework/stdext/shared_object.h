@@ -29,7 +29,9 @@
 #include <cassert>
 #include <ostream>
 
+#ifdef THREAD_SAFE
 #include <atomic>
+#endif
 
 namespace stdext {
 
@@ -50,7 +52,11 @@ public:
     template<typename T> stdext::shared_object_ptr<T> const_self_cast() { return stdext::shared_object_ptr<T>(const_cast<T*>(this)); }
 
 private:
+#ifdef THREAD_SAFE
     std::atomic<refcount_t> refs;
+#else
+    refcount_t refs;
+#endif
 };
 
 template<class T>
