@@ -31,6 +31,7 @@
 #include <framework/graphics/texturemanager.h>
 #include <framework/core/filestream.h>
 #include <framework/otml/otml.h>
+#include <framework/core/resourcemanager.h>
 
 ThingType::ThingType()
 {
@@ -323,34 +324,121 @@ void ThingType::unserialize(uint16 clientId, ThingCategory category, const FileS
     m_texturesFramesOffsets.resize(m_animationPhases);
 }
 
-void ThingType::exportImage(std::string fileName)
+void ThingType::exportImage(std::string fileName, int type)
 {
-    if(m_null)
-        stdext::throw_exception("cannot export null thingtype");
+	/* types:
+	0 - normal export
+	1 - outfit export, all animation frames
+	2 - outfit export, only first animation frame
+	3 - items export, first frame of animation
+	*/
+	if (m_null)
+		stdext::throw_exception("cannot export null thingtype");
 
-    if(m_spritesIndex.size() == 0)
-        stdext::throw_exception("cannot export thingtype without sprites");
+	if (m_spritesIndex.size() == 0)
+		stdext::throw_exception("cannot export thingtype without sprites");
+	if (type == 0)
+	{
+		/* ORGINAL CODE */
+		ImagePtr image(new Image(Size(32 * m_size.width() * m_layers * m_numPatternX, 32 * m_size.height() * m_animationPhases * m_numPatternY * m_numPatternZ)));
+		for (int z = 0; z < m_numPatternZ; ++z) {
+			for (int y = 0; y < m_numPatternY; ++y) {
+				for (int x = 0; x < m_numPatternX; ++x) {
+					for (int l = 0; l < m_layers; ++l) {
+						for (int a = 0; a < m_animationPhases; ++a) {
+							for (int w = 0; w < m_size.width(); ++w) {
+								for (int h = 0; h < m_size.height(); ++h) {
+									image->blit(Point(32 * (m_size.width() - w - 1 + m_size.width() * x + m_size.width() * m_numPatternX * l),
+										32 * (m_size.height() - h - 1 + m_size.height() * y + m_size.height() * m_numPatternY * a + m_size.height() * m_numPatternY * m_animationPhases * z)),
+										g_sprites.getSpriteImage(m_spritesIndex[getSpriteIndex(w, h, l, x, y, z, a)]));
+								}
+							}
+						}
+					}
+				}
+			}
+		}
 
-    ImagePtr image(new Image(Size(32 * m_size.width() * m_layers * m_numPatternX, 32 * m_size.height() * m_animationPhases * m_numPatternY * m_numPatternZ)));
-    for(int z = 0; z < m_numPatternZ; ++z) {
-        for(int y = 0; y < m_numPatternY; ++y) {
-            for(int x = 0; x < m_numPatternX; ++x) {
-                for(int l = 0; l < m_layers; ++l) {
-                    for(int a = 0; a < m_animationPhases; ++a) {
-                        for(int w = 0; w < m_size.width(); ++w) {
-                            for(int h = 0; h < m_size.height(); ++h) {
-                                image->blit(Point(32 * (m_size.width() - w - 1 + m_size.width() * x + m_size.width() * m_numPatternX * l),
-                                                  32 * (m_size.height() - h - 1 + m_size.height() * y + m_size.height() * m_numPatternY * a + m_size.height() * m_numPatternY * m_animationPhases * z)),
-                                            g_sprites.getSpriteImage(m_spritesIndex[getSpriteIndex(w, h, l, x, y, z, a)]));
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+		image->savePNG(fileName);
+	}
+	else if (type == 1)
+	{
+		/* OUTFITS ANIM */
+		/*
+		patternX = direction
+		patternY = 0/1/2 = addon none/first/second
+		patternZ = 0/1 = is sitting on mount no/yes
+		layer = 0/1 = biala postac / co jak wypelniac
+		*/
+		g_resources.makeDir("outfits_anim");
+		g_resources.makeDir(stdext::format("outfits_anim/%d", getId()));
+		for (int z = 0; z < m_numPatternZ; ++z) {
+			for (int y = 0; y < m_numPatternY; ++y) {
+				for (int x = 0; x < m_numPatternX; ++x) {
+					for (int l = 0; l < m_layers; ++l) {
+						for (int a = 0; a < m_animationPhases && a < 8; ++a) {
+							ImagePtr image(new Image(Size(32 * m_size.width(), 32 * m_size.height())));
+							for (int w = 0; w < m_size.width(); ++w) {
+								for (int h = 0; h < m_size.height(); ++h) {
+									image->blit(Point(32 * (m_size.width() - w - 1), 32 * (m_size.height() - h - 1)), g_sprites.getSpriteImage(m_spritesIndex[getSpriteIndex(w, h, l, x, y, z, a)]));
+								}
+							}
+							if (l == 1)
+								image->savePNG(stdext::format("outfits_anim/%d/%d_%d_%d_%d_template.png", getId(), a + 1, z + 1, y + 1, x + 1));
+							else
+								image->savePNG(stdext::format("outfits_anim/%d/%d_%d_%d_%d.png", getId(), a + 1, z + 1, y + 1, x + 1));
+						}
+					}
+				}
+			}
+		}
+	}
+	else if (type == 2)
+	{
+		/* OUTFITS NO ANIM */
+		/*
+		patternX = direction
+		patternY = 0/1/2 = addon none/first/second
+		patternZ = 0/1 = is sitting on mount no/yes
+		layer = 0/1 = biala postac / co jak wypelniac
+		*/
+		g_resources.makeDir("outfits_no_anim");
+		g_resources.makeDir(stdext::format("outfits_no_anim/%d", getId()));
+		for (int z = 0; z < m_numPatternZ; ++z) {
+			for (int y = 0; y < m_numPatternY; ++y) {
+				for (int x = 0; x < m_numPatternX; ++x) {
+					for (int l = 0; l < m_layers; ++l) {
+						ImagePtr image(new Image(Size(32 * m_size.width(), 32 * m_size.height())));
+						for (int w = 0; w < m_size.width(); ++w) {
+							for (int h = 0; h < m_size.height(); ++h) {
+								image->blit(Point(32 * (m_size.width() - w - 1), 32 * (m_size.height() - h - 1)), g_sprites.getSpriteImage(m_spritesIndex[getSpriteIndex(w, h, l, x, y, z, 0)]));
+							}
+						}
+						if (l == 1)
+							image->savePNG(stdext::format("outfits_no_anim/%d/%d_%d_%d_%d_template.png", getId(), 1, z + 1, y + 1, x + 1));
+						else
+							image->savePNG(stdext::format("outfits_no_anim/%d/%d_%d_%d_%d.png", getId(), 1, z + 1, y + 1, x + 1));
+					}
+				}
+			}
+		}
+	}
+	else if (type == 3)
+	{
+		/* ITEMS */
+		g_resources.makeDir("items");
 
-    image->savePNG(fileName);
+		ImagePtr image(new Image(Size(32 * m_size.width(), 32 * m_size.height())));
+		for (int l = 0; l < m_layers; ++l) {
+			for (int w = 0; w < m_size.width(); ++w) {
+				for (int h = 0; h < m_size.height(); ++h) {
+					image->blit(Point(32 * (m_size.width() - w - 1), 32 * (m_size.height() - h - 1)),
+						g_sprites.getSpriteImage(m_spritesIndex[getSpriteIndex(w, h, l, 0, 0, 0, 0)]));
+				}
+			}
+		}
+		image->savePNG(stdext::format("items/%s.png", fileName));
+	}
 }
 
 void ThingType::unserializeOtml(const OTMLNodePtr& node)
