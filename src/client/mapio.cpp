@@ -32,6 +32,124 @@
 #include <framework/xml/tinyxml.h>
 #include <framework/ui/uiwidget.h>
 
+#include <boost/thread.hpp>
+#include <framework/graphics/image.h>
+/*
+void workerFunc(int x, int z)
+{
+    boost::posix_time::seconds workTime(1);
+g_logger.info("start sleep");
+int i = 0;
+while(i < 25)
+{
+    int o = 0;
+    int k = 3;
+    while(o < z)
+    {
+        o++;
+        k = k*k*3;
+    }
+    while(o < z)
+    {
+        o++;
+        k = k*k*3;
+    }
+    while(o < z)
+    {
+        o++;
+        k = k*k*3;
+    }
+    ++i;
+    boost::this_thread::sleep(workTime);
+g_logger.info(stdext::format("mesleep %d %d", x, k));
+}
+
+g_logger.info(stdext::format("end sleep %d", x));
+}
+*/
+#define THREADS_NUMBER 128
+boost::thread* threads[THREADS_NUMBER];
+bool threadsStates[THREADS_NUMBER];
+bool isRunning = false;
+
+void mapPartGenerator(int threadId, int minx, int miny, int minz, int maxx, int maxy, int maxz)
+{
+    for(int z = minz; z <= maxz; z++)
+    {
+        std::stringstream path1;
+        path1 << "map/" << z;
+        g_resources.makeDir(path1.str());
+        for(int x = minx; x <= maxx; x++)
+        {
+            std::stringstream path2;
+            path2 << "map/" << z << "/" << x;
+            g_resources.makeDir(path2.str());
+            for(int y = miny; y <= maxy; y++)
+            {
+                std::stringstream path3;
+                path3 << "map/" << z << "/" << x << "/" << z << "_" << x << "_" << y << ".png";
+                g_map.drawMap(path3.str(), x * 8, y * 8, z, 8);
+            }
+        }
+    }
+    threadsStates[threadId] = false;
+}
+
+void Map::initializeMapGenerator()
+{
+    isRunning = true;
+    for(int i = 0; i < THREADS_NUMBER; i++)
+    {
+        threadsStates[i] = false;
+    }
+}
+
+bool Map::isThreadRunning(int threadId)
+{
+    return threadsStates[threadId];
+}
+
+void Map::startThread(int threadId, int minx, int miny, int minz, int maxx, int maxy, int maxz)
+{
+    //g_logger.info("start 1");
+    threadsStates[threadId] = true;
+    threads[threadId] = new boost::thread(mapPartGenerator, threadId, minx, miny, minz, maxx, maxy, maxz);
+}
+
+void Map::drawMap(std::string fileName, int sx, int sy, int sz, int size)
+{
+    Position pros;
+    ImagePtr image(new Image(Size(32 * (size+2), 32 * (size+2))));
+        pros.z = sz;
+        for(int x = 0; x <= size; x++)
+        {
+            for(int y = 0; y <= size; y++)
+            {
+                pros.x = sx + x;
+                pros.y = sy + y;
+                if (const TilePtr& tile = getTile(pros))
+                {
+                    Point a((x+1) * 32, (y+1) * 32);
+                    tile->drawToImage(a, image);
+                }
+                else
+                {
+					/*
+					logging is useless [if you debug script and genereate some maps like 100x100 you can test it],
+					all messages will appear in console at end of map generation (so you cannot see 'progress')
+					and freez client for longer then normal generation time [for rl map when it will try to show milion messages] :P
+					*/
+                    //g_logger.warning(stdext::format("not exist %d %d",x,y));
+                }
+            }
+        }
+
+		// reduce image size to size from argument (for generation time image is 2 tiles bigger, because of 64x64 items)
+        image->cut();
+		// save to file, save function is modified and will ignore empty images!
+        image->savePNG(fileName);
+}
+
 void Map::loadOtbm(const std::string& fileName)
 {
     try {
@@ -96,6 +214,24 @@ void Map::loadOtbm(const std::string& fileName)
             }
         }
 
+        int minx, miny, minz, maxx, maxy, maxz;
+        minx = miny = minz = 999999;
+        maxx = maxy = maxz = -5;
+        /*
+        g_logger.info("start 1");
+boost::thread* workerThread1 = new boost::thread(workerFunc, 1, 1000000000);
+        g_logger.info("start 2");
+boost::thread workerThread2(workerFunc, 2, 2000000000);
+        g_logger.info("start 3");
+boost::thread workerThread3(workerFunc, 3, 2000000000);
+        g_logger.info("start 4");
+boost::thread workerThread4(workerFunc, 4, 2000000000);
+        g_logger.info("start 5");
+boost::thread workerThread5(workerFunc, 5, 2000000000);
+        g_logger.info("start 6");
+boost::thread workerThread6(workerFunc, 6, 2000000000);
+        g_logger.info("start done");
+        */
         for(const BinaryTreePtr& nodeMapData : node->getChildren()) {
             uint8 mapDataType = nodeMapData->getU8();
             if(mapDataType == OTBM_TILE_AREA) {
@@ -113,6 +249,30 @@ void Map::loadOtbm(const std::string& fileName)
                     uint32 flags = TILESTATE_NONE;
                     Position pos = basePos + nodeTile->getPoint();
 
+                    if(pos.x < minx)
+                    {
+                        minx = pos.x;
+                    }
+                    if(pos.y < miny)
+                    {
+                        miny = pos.y;
+                    }
+                    if(pos.z < minz)
+                    {
+                        minz = pos.z;
+                    }
+                    if(pos.x > maxx)
+                    {
+                        maxx = pos.x;
+                    }
+                    if(pos.y > maxy)
+                    {
+                        maxy = pos.y;
+                    }
+                    if(pos.z > maxz)
+                    {
+                        maxz = pos.z;
+                    }
                     if(type == OTBM_HOUSETILE) {
                         uint32 hId = nodeTile->getU32();
                         TilePtr tile = getOrCreateTile(pos);
@@ -221,6 +381,8 @@ void Map::loadOtbm(const std::string& fileName)
             } else
                 stdext::throw_exception(stdext::format("Unknown map data node %d", (int)mapDataType));
         }
+        g_logger.debug(stdext::format("Example generator of whole map: generateMap(%d, %d, %d, %d, %d, %d, 4) [last 4 = 4 threads to generate]", minx, miny, minz, maxx, maxy, maxz));
+        g_logger.info("These positions are just suggestion. If you know better where is first/last tile then you can use other values.");
 
         fin->close();
     } catch(std::exception& e) {

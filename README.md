@@ -1,60 +1,65 @@
-[![Build Status](https://secure.travis-ci.org/edubart/otclient.svg?branch=master)](http://travis-ci.org/edubart/otclient) [![Join the chat at https://gitter.im/edubart/otclient](https://img.shields.io/badge/GITTER-join%20chat-green.svg)](https://gitter.im/edubart/otclient?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)\
+### What is this fork?
 
-### What is otclient?
+It's 100% automatic map image generator [for website view 'like GoogleMaps'].
+It generates OTS map .png images (each 8x8 tiles).
 
-Otclient is an alternative Tibia client for usage with otserv. It aims to be complete and flexible,
-for that it uses LUA scripting for all game interface functionality and configurations files with a syntax
-similar to CSS for the client interface design. Otclient works with a modular system, this means
-that each functionality is a separated module, giving the possibility to users modify and customize
-anything easily. Users can also create new mods and extend game interface for their own purposes.
-Otclient is written in C++11 and heavily scripted in lua.
+### How to use?
 
-For a server to connect to, you can build your own with the [forgottenserver](https://github.com/otland/forgottenserver)
-or connect to one listed on [otservlist](https://otservlist.org/).
+1. Compile it like normal OTClient:
+https://github.com/edubart/otclient/wiki/Compiling-on-Windows  - CodeBlocks tutorial [harder, but less GB to download before compilation]
+https://otland.net/threads/compiling-otclients-latest-source-with-microsoft-visual-studio-2013.204849/ - VisualStudio tutorial
+https://github.com/edubart/otclient/wiki/Compiling-on-Linux
+https://github.com/edubart/otclient/wiki/Compiling-on-Mac-OS-X
+https://github.com/edubart/otclient/wiki/Compiling-for-Android
 
-### Where do I download?
+2. Copy your server **client .spr and .dat** files to OTClient folder: **data/things/HERE_PROTOCOL_VERSION/**
 
-Compiled for Windows can be found here (but can be outdated):
-* [Windows Builds](http://otland.net/threads/otclient-builds-windows.217977/)
+3. Copy your server **data/items/items.otb** file to OTClient folder: **data/things/HERE_PROTOCOL_VERSION/**
 
-**NOTE:** You will need to download spr/dat files on your own and place them in `data/things/VERSION/` (i.e: `data/things/1098/Tibia.spr`)
+4. Copy your server /**ata/world/MAP_NAME.otbm** file to OTClient folder: **data/map.otbm**
 
-### Features
+5. Run otclient.exe
 
-Beyond of it's flexibility with scripts, otclient comes with tons of other features that make possible
-the creation of new client side stuff in otserv that was not possible before. These include,
-sound system, graphics effects with shaders, modules/addons system, animated textures,
-styleable user interface, transparency, multi language, in game lua terminal, an OpenGL 1.1/2.0 ES engine that make possible
-to port to mobile platforms. Otclient is also flexible enough to
-create tibia tools like map editors just using scripts, because it wasn't designed to be just a
-client, instead otclient was designed to be a combination of a framework and tibia APIs.
+6. Type in client terminal command like:
+    
+    prepareClient(1076, '/things/1076/items.otb', '/map.otbm')
+    
+	with you client protocol version and valid paths to items.otb and map.otbm
+	[Paths are relational, so start path with '/' to start in folder 'data', access to other folders is blocked]
 
-### Compiling
+7. OTClient will show in 10-50 seconds (it will freez client, do not close it, just wait) something like [pink text]:
 
-In short, if you need to compile OTClient, follow these tutorials:
-* [Compiling on Windows](https://github.com/edubart/otclient/wiki/Compiling-on-Windows)
-* [Compiling on Linux](https://github.com/edubart/otclient/wiki/Compiling-on-Linux)
-* [Compiling on OS X](https://github.com/edubart/otclient/wiki/Compiling-on-Mac-OS-X)
+	Example generator of whole map: generateMap(25, 45, 0, 555, 699, 15, 4) [last 4 = 4 threads to generate]
 
+8. Type in client terminal command:
+		
+	**generateMap(25, 45, 0, 555, 699, 15, 4)**
+		
+	OTClient will report progress in terminal.
 
-### Need help?
+	Last **4** is number of threads to run in same time (only way to use more then 1 core to generate images).
 
-Try to ask questions in [otland](http://otland.net/f494/), now we have a board for the project there,
-or talk with us at the gitter chat.
+	If you are borded of getting 'crash' every few seconds/minutes [restart client and type all again..] you can set it to **1**.
+	It will take sooome time, but it will work for sure, so you can leave PC for night and get your map images.
 
-### Bugs
+	**NOTE:** THERE ARE SOME PROBLEMS WITH MULTI THREADING! Read text below, if you want use more then 1 core of your CPU.
 
-Have found a bug? Please create an issue in our [bug tracker](https://github.com/edubart/otclient/issues)
+	There are some problems with multithreading [few threads try to access 1 tile in same time].
+	You can try to run X threads, wait for crash, check in file 'otclient.log' last 'area' generated ['X of XX...'] before crash.
+	Then when you start client again, in 'generateMap' command after number of threads, you can add 'start area' to skip already generated areas. Example:
+		
+	**generateMap(25, 45, 0, 555, 699, 15, NUMBER_OF_THREADS, SKIP_AREAS)**
+		
+	**Remember to set it to number of areas generated before MINUS number of threads.**
 
-### Contributing
-
-We encourage you to contribute to otclient! You can make pull requests of any improvement in our github page, alternatively, see [Contributing Wiki Page](https://github.com/edubart/otclient/wiki/Contributing).
-
-### Contact
-
-Talk directly with us at the gitter chat [![Join the chat at https://gitter.im/edubart/otclient](https://img.shields.io/badge/GITTER-join%20chat-green.svg)](https://gitter.im/edubart/otclient?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge).
-
-### License
-
-Otclient is made available under the MIT License, thus this means that you are free
-to do whatever you want, commercial, non-commercial, closed or open.
+	So if client crashed with last message before 'debug ..':
+		
+	**78 of 192 generated or are being generated right now, 4 threads are generating**
+		
+	and last time your ran 7 threads, then after client restart type:
+		
+	**prepareClient(1076, '/things/1076/items.otb', '/map.otbm') generateMap(25, 45, 0, 555, 699, 15, 7, 71)**
+		
+	last parameter is **71** (78 - 7).
+	
+	You can type few commands in one line with 'space' separator (like in code above: prepareClient and then generateMap)

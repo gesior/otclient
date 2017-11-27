@@ -132,6 +132,7 @@ public:
     void exportImage(std::string fileName);
 
     void draw(const Point& dest, float scaleFactor, int layer, int xPattern, int yPattern, int zPattern, int animationPhase, LightView *lightView = nullptr);
+    void drawToImage(Point dest, int xPattern, int yPattern, int zPattern, ImagePtr image);
 
     uint16 getId() { return m_id; }
     ThingCategory getCategory() { return m_category; }
