@@ -1,3 +1,8 @@
+website_and_php_files/map_viewer/map/
+website_and_php_files/map_tiled/
+website_and_php_files/map/
+website_and_php_files/fs_compress.serialized
+website_and_php_files/fs_tiles.serialized
 build*
 CMakeCache.txt
 CMakeFiles

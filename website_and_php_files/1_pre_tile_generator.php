@@ -1,6 +1,6 @@
 <?php
 $start = microtime(true);
-echo 'Start time: ' . date('H:i:s') . "\n";
+echo 'Start time: ' . date('H:i:s') . PHP_EOL;
 
 function getImageCords($imagePath)
 {
@@ -13,20 +13,20 @@ if(file_exists('map'))
 {
 	if(!is_dir('map_tiled') && !@mkdir('map_tiled'))
 	{
-		exit('Cannot create folder "map_tiled".');
+		exit('Cannot create folder "map_tiled".' . PHP_EOL);
 	}
 	if(!@rename('map', 'map_tiled/16'))
 	{
-		exit('Cannot move folder "map" to "map_tiled/16".');
+		exit('Cannot move folder "map" to "map_tiled/16".' . PHP_EOL);
 	}
 }
 
 if(!is_dir('map_tiled') || !is_dir('map_tiled/16'))
 {
-	exit('Folder "map_tiled" or "map_tiled/16" does not exist.');
+	exit('Folder "map_tiled" or "map_tiled/16" does not exist.' . PHP_EOL);
 }
 
-echo 'Folders for tiles generator created and images moved to new folder in ' . round(microtime(true)-$start, 3) . ' seconds. Listing files in directory...' . "\n";
+echo 'Folders for tiles generator created and images moved to new folder in ' . round(microtime(true)-$start, 3) . ' seconds. Listing files in directory...' . PHP_EOL;
 $start = microtime(true);
 
 $files = [];
@@ -40,4 +40,4 @@ foreach(glob('map_tiled/16/*.png') as $imagePath)
 	++$filesCount;
 }
 file_put_contents('fs_tiles.serialized', serialize($files));
-echo 'Listed ' . $filesCount . ' files in ' . round(microtime(true)-$start, 3) . ' seconds.' . "\n";
+echo 'Listed ' . $filesCount . ' files in ' . round(microtime(true)-$start, 3) . ' seconds.' . PHP_EOL;

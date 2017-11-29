@@ -1,8 +1,6 @@
 <?php
 ob_start();
 $start = microtime(true);
-echo 'Start time: ' . date('H:i:s') . "\n";
-
 function getImageCords($imagePath)
 {
 	$temp1 = explode('.', basename($imagePath));
@@ -11,19 +9,27 @@ function getImageCords($imagePath)
 }
 
 if (count($argv) != 2) {
-	exit('This program requires argument passed in console. Argument is "floor level" to generate. Example: php 2_tile_generator.php 7');
+	exit('This program requires argument passed in console. Argument is "floor level" to generate. Example: php 2_tile_generator.php 7' . PHP_EOL);
 }
 
 if (!file_exists('fs_tiles.serialized')) {
-	exit('File "fs_tiles.serialized" does not exist. First run: php 1_pre_tile_generator.php');
+	exit('File "fs_tiles.serialized" does not exist. First run: php 1_pre_tile_generator.php' . PHP_EOL);
 }
 $floor = $argv[1];
+echo 'Start time (floor ' . $floor . '): ' . date('H:i:s') . PHP_EOL;
+
 $allFiles = unserialize(file_get_contents('fs_tiles.serialized'));
+if(!isset($allFiles[$floor])) {
+	exit('No images for floor ' . $floor . PHP_EOL);
+}
 
 $currentFiles = $allFiles[$floor];
 $nextFiles = [];
 
 $directory = 'map_tiled';
+echo 'Found ' . count($currentFiles) . ' images for floor ' . $floor . ' in ' . round(microtime(true)-$start, 3) . ' seconds' . PHP_EOL;
+
+$start = microtime(true);
 for($zoom = 16; $zoom > 0; $zoom--)
 {
 	@mkdir($directory . '/' . ($zoom-1));
@@ -81,6 +87,6 @@ for($zoom = 16; $zoom > 0; $zoom--)
 	}
 	$currentFiles = $nextFiles;
 	$nextFiles = [];
-	echo 'Zoom level "' . ($zoom-1) . '" tiles (' . $imagesGenerated . ' images) generated in ' . round(microtime(true)-$start, 3) . ' seconds - ' . date('H:i:s') . "\n";
+	echo 'Zoom level "' . ($zoom-1) . '" (floor ' . $floor . ') tiles (' . $imagesGenerated . ' images) generated in ' . round(microtime(true)-$start, 3) . ' seconds - ' . date('H:i:s') . PHP_EOL;
 	$start = microtime(true);
 }

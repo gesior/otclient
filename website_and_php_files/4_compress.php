@@ -19,14 +19,15 @@ function progressBar($done, $total) {
     fwrite(STDERR, $write);
 }
 
-if (count($argv) != 2) {
-	exit('This program requires argument passed in console. Argument is "floor level" to compress. Example: php 4_mcompress.php 7');
+if (count($argv) != 2 && count($argv) != 3) {
+	exit('This program requires argument passed in console. Argument is "floor level" to compress. Example: php 4_mcompress.php 7' . PHP_EOL);
 }
 
 if (!file_exists('fs_compress.serialized')) {
-	exit('File "fs_compress.serialized" does not exist. First run: php 3_pre_compress.php');
+	exit('File "fs_compress.serialized" does not exist. First run: php 3_pre_compress.php' . PHP_EOL);
 }
 $floor = $argv[1];
+$showProgressBar = isset($argv[2]) ? $argv[2] : 1;
 
 @mkdir($toFolder, 0777, true);
 copy('anti_index_page.htm', $toFolder . '/index.htm');
@@ -39,7 +40,7 @@ for($i = 0; $i <= 16; $i++)
 }
 
 $filesToCompress = [];
-echo "Generating list of files to compress...\n";
+echo "Generating list of files to compress (floor " . $floor . ")..." . PHP_EOL;
 $startTime = time();
 $files = unserialize(file_get_contents('fs_compress.serialized'));
 foreach ($files as $imagePath)
@@ -50,7 +51,7 @@ foreach ($files as $imagePath)
 	$filesToCompress[] = $imagePath;
 }
 
-echo "Files to compress count: " . count($filesToCompress) . ", time: " . (time() - $startTime) . " seconds\n";
+echo "Files to compress count (floor " . $floor . "): " . count($filesToCompress) . ", time: " . (time() - $startTime) . " seconds" . PHP_EOL;
 $done = 0;
 
 foreach ($filesToCompress as $imagePath)
@@ -62,8 +63,8 @@ foreach ($filesToCompress as $imagePath)
 	@imagejpeg($image, $savePath, $quality);
 	@imagedestroy($image);
 	$done++;
-	if($done % 100 == 0) {
+	if($showProgressBar == 1 && $done % 100 == 0) {
 		progressBar($done, count($filesToCompress));
 	}
 }
-echo "All images compressed.\nTotal count: " . $done . "\nTotal time: " . (time() - $startTime) . " seconds\n";
+echo "All images compressed (floor " . $floor . ")." . PHP_EOL . "Total count: " . $done . PHP_EOL . "Total time: " . (time() - $startTime) . " seconds" . PHP_EOL;

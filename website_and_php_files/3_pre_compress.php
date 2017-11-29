@@ -4,7 +4,7 @@ $fromExtension = '.png';
 
 $substrFromExtensionLength = -(strlen($fromExtension));
 $files = [];
-echo "Generating list of files to compress...\n";
+echo "Generating list of files to compress..." . PHP_EOL;
 $startTime = time();
 
 foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($fromFolder . '/')) as $filename)
@@ -20,4 +20,4 @@ foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($fromFolde
 	$files[] = $imagePath;
 }
 file_put_contents('fs_compress.serialized', serialize($files));
-echo "Files to compress count: " . count($files) . ", time: " . (time() - $startTime) . " seconds\n";
+echo "Files to compress count: " . count($files) . ", time: " . (time() - $startTime) . " seconds" . PHP_EOL;
