@@ -2,7 +2,7 @@ var mapConfig = {
 	imagesUrl: 'map/', // URL to folder with 'zoom levels' (folders with names 0-16)
 	imagesExtension: '.jpg',
 	mapName: 'RL MAP?',
-	startPosition: {x: 1000, y: 1000, z: 7},
+	startPosition: {x: 32000, y: 32000, z: 7},
 	startZoom: 14,
 	minZoom: 4,
 	maxZoom: 18, // maximum zoom with full quality is 16
@@ -17,7 +17,12 @@ var mapConfig = {
 	streamHideOutfitOnZoom: 14, // show icons, not outfits when zoomed out
 	itemGeneratorURL: 'http://item-images.ots.me/1092/',
 	outfitGeneratorURL: 'http://outfit-images.ots.me/outfit.php?',
-	outfitAnimatedGeneratorURL: 'http://outfit-images.ots.me/animatedOutfits1090/animoutfit.php?'
+	outfitAnimatedGeneratorURL: 'http://outfit-images.ots.me/animatedOutfits1090/animoutfit.php?',
+	
+	// NPC & Monsters, remember to config 'creaturesData.php'
+	creaturesDataURL: false, // set 'false' to disable, set 'creaturesData.php' to make it load data
+	drawMonstersMinimumZoom: 14,
+	drawNpcsMinimumZoom: 13,
 }
 
 var tmpLocation = location.hash.slice(1).split(',');
@@ -46,6 +51,406 @@ var map = L.map('map', {
 
 });
 
+var CreaturesMap = {
+	loaded: false,
+	markers: false,
+	map: false,
+	monstersData: {},
+	npcsData: {},
+	spawnsDataMonster: {},
+	spawnsDataNpc: {},
+	visibleCreatures: [],
+	visibleSpawns: [],
+	
+	init: function(map)
+	{
+		CreaturesMap.map = map;
+		if (mapConfig.creaturesDataURL) {
+			$.getJSON(mapConfig.creaturesDataURL, function(data) {
+				if(data) {
+					CreaturesMap.monstersData = data.monstersData
+					CreaturesMap.npcsData = data.npcsData
+					CreaturesMap.spawnsDataMonster = data.spawnsDataMonster
+					CreaturesMap.spawnsDataNpc = data.spawnsDataNpc
+
+					CreaturesMap.rebuildData(CreaturesMap.spawnsDataMonster, CreaturesMap.monstersData);
+					CreaturesMap.rebuildData(CreaturesMap.spawnsDataNpc, CreaturesMap.npcsData);
+					CreaturesMap.loaded = true;
+					CreaturesMap.map.on('moveend', CreaturesMap.onMapMove);
+					CreaturesMap.redrawCreatureMarkers();
+
+					for(var monsterId in CreaturesMap.monstersData) {
+						var monsterData = CreaturesMap.monstersData[monsterId];
+						$('#monsterSearch').append('<option>' + monsterData.name + '</option>');
+					}
+					$('#monsterSearch').chosen();
+
+					for(var npcId in CreaturesMap.npcsData) {
+						var npcData = CreaturesMap.npcsData[npcId];
+						$('#npcSearch').append('<option>' + npcData.name + '</option>');
+					}
+					$('#npcSearch').chosen();
+				}
+			});
+		}
+		CreaturesMap.clearVisibleSpawns();
+	},
+
+	searchByName(names, thingsList) {
+		var results = [];
+
+		for (var z in thingsList) {
+			if (!thingsList.hasOwnProperty(z)) continue;
+
+			var zData = thingsList[z];
+			for (var x in zData) {
+				if (!zData.hasOwnProperty(x)) continue;
+
+				var xData = zData[x];
+				for (var y in xData) {
+					if (!xData.hasOwnProperty(y)) continue;
+
+					var data = xData[y];
+					if(names.indexOf(data.name) >= 0) {
+						results.push(data);
+					}
+				}
+			}
+		}
+
+		return results;
+	},
+
+	monsterSearch() {
+		CreaturesMap.clearVisibleSpawns();
+		var monsterNames = $('#monsterSearch').val();
+		var resultsBox = $('#monsterSearchResults');
+		if (monsterNames) {
+			resultsBox.html('');
+			var monsters = CreaturesMap.searchByName(monsterNames, CreaturesMap.spawnsDataMonster);
+			// clone objects
+			monsters = JSON.parse(JSON.stringify(monsters));
+			var currentGroupId = 0;
+			var groups = [];
+			for(var monsterOneId in monsters) {
+				var monster1 = monsters[monsterOneId];
+				// create new group
+				if (monster1.group === undefined) {
+					monster1.group = currentGroupId++;
+					groups.push([monster1]);
+				}
+				for(var monsterTwoId in monsters) {
+					var monster2 = monsters[monsterTwoId];
+					if (Math.abs(monster1.x - monster2.x) <= 25 && Math.abs(monster1.y - monster2.y) <= 25 && Math.abs(monster1.z - monster2.z) <= 1) {
+						if (monster2.group === undefined) {
+							// add neightbour to group
+							monster2.group = monster1.group;
+							groups[monster1.group].push(monster2);
+						} else if (monster1.group != monster2.group) {
+							// merge group to monster1 group
+							var toRemoveGroup = monster2.group;
+							for(var monsterMergeId in groups[toRemoveGroup]) {
+								var monsterMerge = groups[toRemoveGroup][monsterMergeId];
+								monsterMerge.group = monster1.group;
+								groups[monster1.group].push(monsterMerge);
+							}
+							groups[toRemoveGroup] = [];
+						}
+					}
+				}
+			}
+			for(var i = 0; i < groups.length; i++) {
+				if (groups[i].length == 0) {
+					groups.splice(i, 1);
+					i--;
+				}
+			}
+			resultsBox.append('<div>Monsters: ' + monsters.length + ' Groups: ' + groups.length + '</div>');
+			for(var groupId in groups) {
+				var groupMonsters = groups[groupId];
+				
+				var monsterNames = [];
+				for(var monsterId in groupMonsters) {
+					var monster = groupMonsters[monsterId];
+					if (monsterNames.indexOf(monster.name) == -1) {
+						monsterNames.push(monster.name);	
+					}
+				}
+				resultsBox.append(
+					'<button class="btn btn-info" onclick="Map.setCenter({x: ' + monster.x + ', y:  ' + monster.y + ', z:  ' + monster.z + '}, true)">' + 
+					monsterNames.join(', ')  +  ' (' + groupMonsters.length + ')</button>'
+				);
+				
+				// add spawns on map
+				for(var monsterId in groupMonsters) {
+					var monster = groupMonsters[monsterId];
+					var spawn = new L.circle(Map.positionToLatLng(monster.x + 0.5, monster.y + 0.5), 150);
+					CreaturesMap.visibleSpawns[monster.z].push(spawn);
+				}
+			}
+		}
+		CreaturesMap.redrawSpawns();
+	},
+
+	hideVisibleSpawns() {
+		for(var floorId in CreaturesMap.visibleSpawns)
+		{
+			var visibleSpawnsOnFloor = CreaturesMap.visibleSpawns[floorId];
+			for(var markerId in visibleSpawnsOnFloor)
+			{
+				var marker = visibleSpawnsOnFloor[markerId];
+				CreaturesMap.map.removeLayer(marker);
+			}
+		}
+	},
+
+	clearVisibleSpawns() {
+		CreaturesMap.hideVisibleSpawns();
+
+		CreaturesMap.visibleSpawns = [];
+		for(var i = 0; i <= 16; i++) {
+			CreaturesMap.visibleSpawns.push([]);
+		}
+	},
+	
+	redrawSpawns() {
+		CreaturesMap.hideVisibleSpawns();
+
+		var floorId = Map.getFloor();
+		if (CreaturesMap.visibleSpawns[floorId].length > 0) {
+			var visibleSpawnsOnFloor = CreaturesMap.visibleSpawns[floorId];
+			for(var markerId in visibleSpawnsOnFloor)
+			{
+				var marker = visibleSpawnsOnFloor[markerId];
+				marker.addTo(CreaturesMap.map);
+			}
+		}
+	},
+	
+	npcSearch() {
+		var npcName = $('#npcSearch').val();
+		if (npcName) {
+			var npcNameArray = [npcName];
+			var npcs = CreaturesMap.searchByName(npcNameArray, CreaturesMap.spawnsDataNpc);
+			for(var npcId in npcs) {
+				var npc = npcs[npcId];
+				Map.setCenter({x: npc.x, y: npc.y, z: npc.z}, false);
+				var addedSpawn = new L.circle(Map.positionToLatLng(npc.x + 0.5, npc.y + 0.5), 150);
+				addedSpawn.addTo(map);
+			}
+		}
+	},
+
+	onMapMove: function()
+	{
+		CreaturesMap.redrawCreatureMarkers();
+	},
+
+	floorChanged: function(floor)
+	{
+		CreaturesMap.redrawCreatureMarkers();
+		CreaturesMap.redrawSpawns();
+	},
+
+	getMonstersInRange(minX, minY, minZ, maxX, maxY, maxZ)
+	{
+		return CreaturesMap.getThingInRange(CreaturesMap.spawnsDataMonster, minX, minY, minZ, maxX, maxY, maxZ)
+	},
+
+	getNpcsInRange(minX, minY, minZ, maxX, maxY, maxZ)
+	{
+		return CreaturesMap.getThingInRange(CreaturesMap.spawnsDataNpc, minX, minY, minZ, maxX, maxY, maxZ)
+	},
+
+	getThingInRange(thingList, minX, minY, minZ, maxX, maxY, maxZ)
+	{
+		var list = [];
+		for (var z in thingList) {
+			if (!thingList.hasOwnProperty(z) || minZ > z || z > maxZ) continue;
+
+			var zData = thingList[z];
+			for (var x in zData) {
+				if (!zData.hasOwnProperty(x) || minX > x || x > maxX) continue;
+
+				var xData = zData[x];
+				for (var y in xData) {
+					if (!xData.hasOwnProperty(y) || minY > y || y > maxY) continue;
+
+					var yData = xData[y];
+					list.push(yData);
+				}
+			}
+		}
+
+		return list;
+	},
+	
+	redrawCreatureMarkers: function()
+	{
+		for(var markerId in CreaturesMap.visibleCreatures)
+		{
+			var marker = CreaturesMap.visibleCreatures[markerId];
+			CreaturesMap.map.removeLayer(marker);
+		}
+
+		CreaturesMap.visibleCreatures = [];
+
+		var bounds = Map.getBounds();
+		
+		if(map.getZoom() >= mapConfig.drawMonstersMinimumZoom)
+		{
+			var visibleMonsters = CreaturesMap.getMonstersInRange(bounds.minX, bounds.minY, Map.getFloor(), bounds.maxX, bounds.maxY, Map.getFloor());
+
+			for(var monsterId in visibleMonsters)
+			{
+				var monster = visibleMonsters[monsterId];
+
+				if(monster.z == Map.currentFloor)
+				{
+					var divider = Math.pow(2, (22 - map.getZoom()));
+					var positionChange = {x: 0.5, y: 0.5};
+					if(monster.look[1] > 0)
+					{
+						var monsterIcon = new L.Icon({iconSize: [2048 / divider, 2048 / divider], iconAnchor: [3072 / divider, 3072 / divider], 
+							iconUrl: mapConfig.itemGeneratorURL + monster.look[1] + '.gif'});
+						positionChange.x += 1;
+						positionChange.y += 1;
+					}
+					else
+					{
+						var monsterIcon = new L.Icon({iconSize: [4096 / divider, 4096 / divider], iconAnchor: [3072 / divider, 3072 / divider], 
+							iconUrl: mapConfig.outfitGeneratorURL + 'id=' + monster.look[0] + '&addons=' + monster.look[6] + 
+							'&head=' + monster.look[2] + '&body=' + monster.look[3] + '&legs=' + monster.look[4] + '&feet=' + monster.look[5] + '&mount=0&direction=3'});
+					}
+					
+					var marker = new L.marker(new L.LatLng(-((monster.y+positionChange.y) / 2048), ((monster.x+positionChange.x) / 2048)), {
+						icon: monsterIcon,
+						monsterName: monster.name,
+						type: 'monster'
+					});
+					marker.on('click', CreaturesMap.onClickMonster);
+					marker.addTo(CreaturesMap.map);
+					CreaturesMap.visibleCreatures.push(marker);
+					
+					var nameIcon = new L.divIcon({ 
+						iconSize: new L.Point(200, 30), 
+						html: monster.name
+					});
+
+					var nameMarker = new L.marker(new L.LatLng(-((monster.y+positionChange.y-1) / 2048), ((monster.x+positionChange.x) / 2048)), {
+						icon: nameIcon,
+						monsterName: monster.name,
+						type: 'monster'
+					});
+					nameMarker.on('click', CreaturesMap.onClickMonster);
+					nameMarker.addTo(CreaturesMap.map);
+					CreaturesMap.visibleCreatures.push(nameMarker);
+				}
+			}
+		}
+		
+		var visibleNpcs = CreaturesMap.getNpcsInRange(bounds.minX, bounds.minY, Map.getFloor(), bounds.maxX, bounds.maxY, Map.getFloor());
+
+		if(map.getZoom() >= mapConfig.drawNpcsMinimumZoom)
+		{
+			for(var npcId in visibleNpcs)
+			{
+				var npc = visibleNpcs[npcId];
+
+				if(npc.z == Map.currentFloor)
+				{
+					var divider = Math.pow(2, (22 - map.getZoom()));
+					var positionChange = {x: 0.5, y: 0.5};
+					if(npc.look[1] > 0)
+					{
+						var npcIcon = new L.Icon({iconSize: [2048 / divider, 2048 / divider], iconAnchor: [3072 / divider, 3072 / divider], 
+							iconUrl: mapConfig.itemGeneratorURL + npc.look[1] + '.gif'});
+						positionChange.x += 1;
+						positionChange.y += 1;
+					}
+					else
+					{
+						var npcIcon = new L.Icon({iconSize: [4096 / divider, 4096 / divider], iconAnchor: [3072 / divider, 3072 / divider], 
+							iconUrl: mapConfig.outfitGeneratorURL + 'id=' + npc.look[0] + '&addons=' + npc.look[6] + 
+							'&head=' + npc.look[2] + '&body=' + npc.look[3] + '&legs=' + npc.look[4] + '&feet=' + npc.look[5] + '&mount=0&direction=3'});
+					}
+					
+					var marker = new L.marker(new L.LatLng(-((npc.y+positionChange.y) / 2048), ((npc.x+positionChange.x) / 2048)), {
+						icon: npcIcon,
+						npcName: npc.name,
+						type: 'npc'
+					});
+					marker.on('click', CreaturesMap.onClickNpc);
+					marker.addTo(CreaturesMap.map);
+					CreaturesMap.visibleCreatures.push(marker);
+					
+					var nameIcon = new L.divIcon({ 
+						iconSize: new L.Point(200, 30), 
+						html: npc.name
+					});
+
+					var nameMarker = new L.marker(new L.LatLng(-((npc.y+positionChange.y-1) / 2048), ((npc.x+positionChange.x) / 2048)), {
+						icon: nameIcon,
+						npcName: npc.name,
+						type: 'npc'
+					});
+					nameMarker.on('click', CreaturesMap.onClickNpc);
+					nameMarker.addTo(CreaturesMap.map);
+					CreaturesMap.visibleCreatures.push(nameMarker);
+				}
+			}
+		}
+	},
+	
+	onClickMonster: function(e) {
+		console.log('onClickMonster', e.target.options.monsterName);
+	},
+	onClickNpc: function(e) {
+		console.log('onClickNpc', e.target.options.npcName);
+	},
+
+	rebuildData(thingList, thingData)
+	{
+		for (var z in thingList) {
+			if (!thingList.hasOwnProperty(z)) continue;
+
+			var zData = thingList[z];
+			for (var x in zData) {
+				if (!zData.hasOwnProperty(x)) continue;
+
+				var xData = zData[x];
+				for (var y in xData) {
+					if (!xData.hasOwnProperty(y)) continue;
+
+					var dataId = xData[y];
+					var data = thingData[dataId];
+					var newData = {
+						name: data.name,
+						look: {
+							type: data.look[0],
+							typeex: data.look[1],
+							body: data.look[2],
+							legs: data.look[3],
+							feet: data.look[4],
+							addons: data.look[5]
+						}
+					};
+					for (var key in data) {
+						if (!data.hasOwnProperty(key)) continue;
+
+						newData[key] = data[key]
+					}
+					newData.x = parseInt(x);
+					newData.y = parseInt(y);
+					newData.z = parseInt(z);
+
+					xData[y] = newData;
+				}
+			}
+		}
+	}
+}
+
 function onMapPositionChange()
 {
 	var pos = Map.getPosition();
@@ -53,6 +458,7 @@ function onMapPositionChange()
 	var positionString = location.origin + location.pathname + '#zoom,' + map.getZoom() + ',position,' + parseInt(pos[0]) + ',' + parseInt(pos[1]) + ',' + parseInt(pos[2]);
 	$('#location').val(positionString)
 }
+
 map.on('moveend', onMapPositionChange);
 
 var mapTilesLevelsLayers = [];
@@ -92,6 +498,7 @@ var Game = {
 
 	init: function(startPosition)
 	{
+		CreaturesMap.init(map);
 		Map.setCenter(startPosition, true);
 		if(mapConfig.streamPlayers)
 			Game.updateAnimations(1);
@@ -452,6 +859,7 @@ var Map = {
 			map.addLayer(mapTilesLevelsLayers[Map.currentFloor]);
 			Game.redrawMarkersOnUpdate = true;
 			Interface.floorChanged(floorId);
+			CreaturesMap.floorChanged(floorId);
 		}
 	},
 
@@ -463,6 +871,22 @@ var Map = {
 	getPosition: function()
 	{
 		return [map.getCenter().lng * 2048, map.getCenter().lat * -2048, Map.currentFloor];
+	},
+
+	positionToLatLng: function(x, y)
+	{
+		return [(-y / 2048), (x / 2048)];
+	},
+
+	getBounds: function()
+	{
+		var bounds = map.getBounds();
+		return {
+			minX: bounds._southWest.lng * 2048,
+			minY: bounds._northEast.lat * -2048,
+			maxX: bounds._northEast.lng * 2048,
+			maxY: bounds._southWest.lat * -2048
+		};
 	},
 
 	setCenter: function(position, teleport)
@@ -594,7 +1018,8 @@ $("#searchForm").submit(function(event)
 
 Game.init(mapConfig.startPosition);
 map.setZoom(mapConfig.startZoom);
-
+/*
 $('#map').css('position', 'relative')
 .append('<div id="line1" style="height:3px;width:100%;background:repeating-linear-gradient(90deg,#DD3333,#DD3333 10px,transparent 10px,transparent 20px);top:50%;left:0;position:absolute"></div>')
 .append('<div id="line2" style="height:100%;width:3px;background:repeating-linear-gradient(0deg,#DD3333,#DD3333 10px,transparent 10px,transparent 20px);top:0;left:50%;position:absolute"></div>')
+*/
