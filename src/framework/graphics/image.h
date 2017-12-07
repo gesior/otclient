@@ -39,7 +39,8 @@ public:
 
     void overwriteMask(const Color& maskedColor, const Color& insideColor = Color::white, const Color& outsideColor = Color::alpha);
     void blit(const Point& dest, const ImagePtr& other);
-	void addShadow(uint8 orginalPercent);
+    void addShadowToSquare(const Point& dest, int squareSize, uint8 orginalPercent);
+    void addShadow(uint8 orginalPercent);
     void paste(const ImagePtr& other);
     void resize(const Size& size) { m_size = size; m_pixels.resize(size.area() * m_bpp, 0); }
     bool nextMipmap();

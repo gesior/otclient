@@ -47,6 +47,7 @@ public:
 
     void setTile(const TilePtr& tile);
     TilePtr getTile(const Position& pos);
+    const TileList getTiles();
 
     void setName(const std::string& name) { m_attribs.set(HouseAttrName, name); }
     std::string getName() { return m_attribs.get<std::string>(HouseAttrName); }

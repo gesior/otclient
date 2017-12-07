@@ -192,10 +192,9 @@ void Map::initializeMapGenerator(int threadsNumber)
 
 void Map::addAreasToGenerator(int startAreaId, int endAreaId)
 {
-	typedef std::unordered_map<uint32, uint32>::iterator it_type;
 	int i = 0;
 	uint32 position, x, y, z;
-	for (it_type iterator = mapAreas.begin(); iterator != mapAreas.end(); iterator++)
+	for (auto iterator = mapAreas.begin(); iterator != mapAreas.end(); iterator++)
 	{
 		if (startAreaId <= i && i <= endAreaId)
 		{
@@ -209,63 +208,121 @@ void Map::addAreasToGenerator(int startAreaId, int endAreaId)
 	}
 }
 
-void Map::drawMap(std::string fileName, int sx, int sy, int sz, int size)
+void Map::drawMap(std::string fileName, int sx, int sy, short sz, int size, uint32 houseId/* = 0 */)
 {
-	Position pros;
-	ImagePtr image(new Image(Size(32 * (size + 2), 32 * (size + 2))));
-	int lowestFloor = 15;
-	if (sz <= 7) {
-		lowestFloor = 7;
-	}
-	int offset = 0;
-	for (int z = lowestFloor; z > sz; z--)
-	{
-		pros.z = z;
-		offset = z - sz;
-		for (int x = -offset; x <= size; x++)
-		{
-			for (int y = -offset; y <= size; y++)
-			{
-				pros.x = sx + x;
-				pros.y = sy + y;
-				if (const TilePtr& tile = getTile(pros))
-				{
-					int offX = x + 1 + offset;
-					int offY = y + 1 + offset;
-					if (offX < size + 2 && offY < size + 2) {
-						Point a(offX * 32, offY * 32);
-						tile->drawToImage(a, image);
-					}
-				}
-			}
-		}
+    Position pros;
+    ImagePtr image(new Image(Size(32 * (size + 2), 32 * (size + 2))));
+    short lowestFloor = 15;
+    if (sz <= 7) {
+        lowestFloor = 7;
+    }
+
+    int offset = 0;
+    for (short z = lowestFloor; z > sz; z--) {
+        pros.z = z;
+        offset = z - sz;
+        for (int x = -offset; x <= size; x++) {
+            for (int y = -offset; y <= size; y++) {
+                pros.x = sx + x;
+                pros.y = sy + y;
+                if (const TilePtr &tile = getTile(pros)) {
+                    int offX = x + 1 + offset;
+                    int offY = y + 1 + offset;
+                    if (offX < size + 2 && offY < size + 2) {
+                        Point a(offX * 32, offY * 32);
+                        tile->drawToImage(a, image);
+                    }
+                }
+            }
+        }
+    }
+
+    image->addShadow(uint8(100 - shadowPercent));
+
+    pros.z = sz;
+    offset = 0;
+    for (int x = -offset; x <= size; x++) {
+        for (int y = -offset; y <= size; y++) {
+            pros.x = sx + x;
+            pros.y = sy + y;
+            if (const TilePtr &tile = getTile(pros)) {
+                int offX = x + 1 + offset;
+                int offY = y + 1 + offset;
+                if (offX < size + 2 && offY < size + 2) {
+                    Point a(offX * 32, offY * 32);
+                    tile->drawToImage(a, image);
+                }
+            }
+        }
+    }
+
+    if (houseId > 0) {
+        HousePtr house = g_houses.getHouse(houseId);
+        if (house) {
+            pros.z = sz;
+            offset = 0;
+            for (int x = -offset; x <= size; x++) {
+                for (int y = -offset; y <= size; y++) {
+                    pros.x = sx + x;
+                    pros.y = sy + y;
+                    if (house->getTile(pros) == nullptr) {
+                        int offX = x + 1 + offset;
+                        int offY = y + 1 + offset;
+                        if (offX < size + 2 && offY < size + 2) {
+                            Point dest(offX * 32, offY * 32);
+                            image->addShadowToSquare(dest, 32, uint8(100 - shadowPercent));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // reduce image size to size from argument (for generation time image is 2 tiles bigger, because of 64x64 items)
+    image->cut();
+    // save to file, save function is modified and will ignore empty images!
+    image->savePNG(fileName);
+}
+
+void Map::drawHouse(uint32 houseId, int houseImageMarginSize)
+{
+	HousePtr house = g_houses.getHouse(houseId);
+	if(!house) {
+		return;
 	}
 
-	image->addShadow(100 - shadowPercent);
+	int minX = 99999;
+	int maxX = 0;
+	int minY = 99999;
+	int maxY = 0;
+	std::set<short> floors;
 
-	pros.z = sz;
-	offset = 0;
-	for (int x = -offset; x <= size; x++)
-	{
-		for (int y = -offset; y <= size; y++)
-		{
-			pros.x = sx + x;
-			pros.y = sy + y;
-			if (const TilePtr& tile = getTile(pros))
-			{
-				int offX = x + 1 + offset;
-				int offY = y + 1 + offset;
-				if (offX < size + 2 && offY < size + 2) {
-					Point a(offX * 32, offY * 32);
-					tile->drawToImage(a, image);
-				}
-			}
-		}
+	for (const auto& tile : house->getTiles()) {
+		Position pos = tile->getPosition();
+		floors.insert(pos.z);
+
+		if (pos.x < minX)
+			minX = pos.x;
+
+		if (pos.x > maxX)
+			maxX = pos.x;
+
+		if (pos.y < minY)
+			minY = pos.y;
+
+		if (pos.y > maxY)
+			maxY = pos.y;
 	}
-	// reduce image size to size from argument (for generation time image is 2 tiles bigger, because of 64x64 items)
-	image->cut();
-	// save to file, save function is modified and will ignore empty images!
-	image->savePNG(fileName);
+
+	int imageSize = std::max(maxX - minX, maxY - minY) + houseImageMarginSize * 2;
+	int sx = minX - ((imageSize - (maxX - minX)) / 2);
+	int sy = minY - ((imageSize - (maxY - minY)) / 2);
+	std::cout << "Generate house ID: " << houseId << ", size: " << imageSize << std::endl;
+
+	for (auto floor : floors) {
+		std::stringstream path;
+		path << "house/"<< houseId << "_" << floor << ".png";
+		drawMap(path.str(), sx, sy, floor, imageSize, houseId);
+	}
 }
 
 void Map::loadOtbm(const std::string& fileName)
