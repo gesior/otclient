@@ -155,6 +155,23 @@ void Image::blit(const Point& dest, const ImagePtr& other)
 	}
 }
 
+void Image::addShadowToSquare(const Point& dest, int squareSize, uint8 orginalPercent)
+{
+    assert(m_bpp == 4);
+
+    for(int p = 0; p < squareSize * squareSize; ++p) {
+        int x = p % squareSize;
+        int y = p / squareSize;
+        int pos = ((dest.y + y) * m_size.width() + (dest.x + x)) * 4;
+
+        if (m_pixels[pos+3] != 0) {
+            m_pixels[pos+0] = uint8((m_pixels[pos+0] * orginalPercent) / 100);
+            m_pixels[pos+1] = uint8((m_pixels[pos+1] * orginalPercent) / 100);
+            m_pixels[pos+2] = uint8((m_pixels[pos+2] * orginalPercent) / 100);
+        }
+    }
+}
+
 void Image::addShadow(uint8 orginalPercent)
 {
 	assert(m_bpp == 4);
@@ -163,9 +180,9 @@ void Image::addShadow(uint8 orginalPercent)
 		int p4 = p * 4;
 
 		if (m_pixels[p4 + 3] != 0) {
-			m_pixels[p4 + 0] = (m_pixels[p4 + 0] * orginalPercent) / 100;
-			m_pixels[p4 + 1] = (m_pixels[p4 + 1] * orginalPercent) / 100;
-			m_pixels[p4 + 2] = (m_pixels[p4 + 2] * orginalPercent) / 100;
+			m_pixels[p4 + 0] = uint8((m_pixels[p4 + 0] * orginalPercent) / 100);
+			m_pixels[p4 + 1] = uint8((m_pixels[p4 + 1] * orginalPercent) / 100);
+			m_pixels[p4 + 2] = uint8((m_pixels[p4 + 2] * orginalPercent) / 100);
 		}
 	}
 }

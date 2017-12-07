@@ -53,6 +53,16 @@ TilePtr House::getTile(const Position& position)
     return nullptr;
 }
 
+const TileList House::getTiles()
+{
+    TileList tiles;
+    for(const auto& pair : m_tiles) {
+        tiles.push_back(pair.second);
+    }
+
+    return tiles;
+}
+
 void House::addDoor(const ItemPtr& door)
 {
     if (!door) return;

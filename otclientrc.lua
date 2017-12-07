@@ -29,7 +29,6 @@ local mapPartsToGenerate = {}
 local mapPartsCount = 0
 local mapPartsCurrentId = 0
 local mapImagesGenerated = 0
---local map
 
 -- ex. prepareClient(1076, '/things/1076/items.otb', '/map.otbm')
 function prepareClient(cv, op, mp, ttr, mpc)
@@ -44,6 +43,7 @@ end
 
 function prepareClient_action()
 	g_map.initializeMapGenerator(threadsToRun);
+	g_resources.makeDir('house');
 	g_logger.info("Loading client Tibia.dat and Tibia.spr...")
 	g_game.setClientVersion(clientVersion)
 	g_logger.info("Loading server items.otb...")
@@ -99,15 +99,19 @@ function prepareClient_action()
 	g_logger.debug("generateMap('all', 30)");
     g_logger.info("ONLY PARTS 2 AND 3 OF MAP:")
 	g_logger.debug("generateMap({2, 3}, 30)");
+	g_logger.info("")
+	
 end
 
 function generateManager()
+	-- code here
 	if (g_map.getGeneratedAreasCount() / 1000) + 1 > areasAdded then
 		g_map.addAreasToGenerator(areasAdded * 1000, areasAdded * 1000 + 999)
 		areasAdded = areasAdded + 1
 	end
 
 	if lastPrintStatus ~= os.time() then
+		-- status here
 		print(math.floor(g_map.getGeneratedAreasCount() / g_map.getAreasCount() * 100) .. '%, ' .. format_int(g_map.getGeneratedAreasCount()) .. ' of ' .. format_int(g_map.getAreasCount()) .. ' images generated - PART ' .. mapPartsCurrentId .. ' OF ' .. #mapPartsToGenerate)
 
 		if g_map.getAreasCount() == g_map.getGeneratedAreasCount() then
@@ -133,6 +137,8 @@ end
 function startMapPartGenerator()
 	local currentMapPart = mapPartsToGenerate[mapPartsCurrentId]
 	
+	g_logger.info("Set min X to load: " .. currentMapPart.minXload)
+	g_logger.info("Set max X to load: " .. currentMapPart.maxXload)
 	g_logger.info("Set min X to render: " .. currentMapPart.minXrender)
 	g_logger.info("Set max X to render: " .. currentMapPart.maxXrender)
 	g_map.setMinXToLoad(currentMapPart.minXload)
@@ -152,7 +158,7 @@ end
 
 function generateMap(mapPartsToGenerateIds, shadowPercent)
 	if isGenerating then
-		print('Script is already running. Cannot start another generator in same time.')
+		print('Generating script is already running. Cannot start another generation')
 		return
 	end
 	
@@ -188,4 +194,124 @@ function format_int(number)
 	local i, j, minus, int, fraction = tostring(number):find('([-]?)(%d+)([.]?%d*)')
 	int = int:reverse():gsub("(%d%d%d)", "%1,")
 	return minus .. int:reverse():gsub("^,", "") .. fraction
+end
+
+partialLoading = false
+houseTiles = {}
+houseImageMarginSize = 5
+
+function generateHouseImage(id)
+
+	local floors = {}
+	
+	if partialLoading then
+		-- load part of map that contains house
+		local minX = 99999
+		local maxX = 0
+		for _, tilePosition in pairs(houseTiles[id]) do
+			local pos = tilePosition
+
+			floors[pos.z] = pos.z
+
+			if pos.x < minX then
+				minX = pos.x
+			end
+			if pos.x > maxX then
+				maxX = pos.x
+			end
+		end
+		g_map.setMinXToLoad(minX - (houseImageMarginSize + 16))
+		g_map.setMaxXToLoad(maxX + houseImageMarginSize + 16)
+		g_map.setMinXToRender(minX - (houseImageMarginSize + 8))
+		g_map.setMaxXToRender(maxX + houseImageMarginSize + 8)
+		g_logger.info("Loading server map part for house ID " .. id)
+		print(
+		g_map.getMinXToLoad(),
+		g_map.getMaxXToLoad(),
+		g_map.getMinXToRender(),
+		g_map.getMaxXToRender())
+		g_map.loadOtbm(mapPath)
+	end
+
+	g_map.drawHouse(id, houseImageMarginSize)
+	
+	houseTiles[id] = nil
+end
+
+function generateHouseImages()
+	-- code to generate images in loop, generated images got houseTiles set to null
+	local anyGenerated = false
+	for houseId, tiles in pairs(houseTiles) do
+		if tiles then
+			generateHouseImage(houseId)
+			g_logger.info("Generated house image: " .. houseId)
+			anyGenerated = true
+		end
+	end
+	
+	if anyGenerated then
+		g_dispatcher.scheduleEvent(generateHouseImages, 100)
+	else
+		isGenerating = false
+		g_logger.info("Done house image generation.")
+	end
+end
+
+function mapLoadManager()
+	if mapPartsCurrentId ~= #mapPartsToGenerate then
+		mapPartsCurrentId = mapPartsCurrentId + 1
+
+		local currentMapPart = mapPartsToGenerate[mapPartsCurrentId]
+
+		g_logger.info("Set min X to load: " .. currentMapPart.minXload)
+		g_logger.info("Set max X to load: " .. currentMapPart.maxXload)
+		g_logger.info("Set min X to render: " .. currentMapPart.minXrender)
+		g_logger.info("Set max X to render: " .. currentMapPart.maxXrender)
+		g_map.setMinXToLoad(currentMapPart.minXload)
+		g_map.setMaxXToLoad(currentMapPart.maxXload)
+		g_map.setMinXToRender(currentMapPart.minXrender)
+		g_map.setMaxXToRender(currentMapPart.maxXrender)
+
+		g_logger.info("Loading server map part " .. mapPartsCurrentId .. " of " .. #mapPartsToGenerate)
+		g_map.loadOtbm(mapPath)
+
+		for _, house in pairs(g_houses.getHouseList()) do
+			local houseId = house:getId()
+			if not houseTiles[houseId] then
+				houseTiles[houseId] = {}
+			end
+			for i, tile in pairs(house:getTiles()) do
+				local tileString = tile:getPosition().x .. '_' .. tile:getPosition().y .. '_' .. tile:getPosition().z
+				houseTiles[houseId][tileString] = tile:getPosition()
+			end
+		end
+
+		g_dispatcher.scheduleEvent(mapLoadManager, 1000)
+	else
+		g_logger.info("Map loading finished.")
+		
+		g_logger.info("Starting house image generator.")
+		g_dispatcher.scheduleEvent(generateHouseImages, 1000)
+	end
+end
+
+function generateHouses(shadowPercent, doPartialLoading)
+	if isGenerating then
+		print('Generating script is already running. Cannot start another generator.')
+		return
+	end
+	
+	partialLoading = doPartialLoading
+	g_map.setShadowPercent(shadowPercent)
+	
+	isGenerating = true
+
+	mapPartsCurrentId = 0
+	mapPartsToGenerate = {}
+	
+	for i = 1, mapPartsCount do
+		table.insert(mapPartsToGenerate, mapParts[i])
+	end
+
+	g_dispatcher.scheduleEvent(mapLoadManager, 100)
 end

@@ -110,6 +110,7 @@ void Client::registerLuaFunctions()
 	g_lua.bindSingletonFunction("g_map", "getAreasCount", &Map::getAreasCount, &g_map);
 	g_lua.bindSingletonFunction("g_map", "addAreasToGenerator", &Map::addAreasToGenerator, &g_map);
 	g_lua.bindSingletonFunction("g_map", "drawMap", &Map::drawMap, &g_map);
+	g_lua.bindSingletonFunction("g_map", "drawHouse", &Map::drawHouse, &g_map);
 	g_lua.bindSingletonFunction("g_map", "getMaxXToLoad", &Map::getMaxXToLoad, &g_map);
 	g_lua.bindSingletonFunction("g_map", "setMaxXToLoad", &Map::setMaxXToLoad, &g_map);
 	g_lua.bindSingletonFunction("g_map", "getMinXToLoad", &Map::getMinXToLoad, &g_map);
@@ -426,6 +427,7 @@ void Client::registerLuaFunctions()
     g_lua.bindClassMemberFunction<House>("getTownId", &House::getTownId);
     g_lua.bindClassMemberFunction<House>("setTile", &House::setTile);
     g_lua.bindClassMemberFunction<House>("getTile", &House::getTile);
+    g_lua.bindClassMemberFunction<House>("getTiles", &House::getTiles);
     g_lua.bindClassMemberFunction<House>("setEntry", &House::setEntry);
     g_lua.bindClassMemberFunction<House>("getEntry", &House::getEntry);
     g_lua.bindClassMemberFunction<House>("addDoor", &House::addDoor);

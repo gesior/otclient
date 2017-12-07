@@ -2,18 +2,25 @@
 
 It's 100% automatic map image generator [for website view 'like GoogleMaps'].
 It generates OTS map .png images (each 8x8 tiles).
+It can also generate house images for website.
 
 ### How to use?
 
+GENERATE WHOLE MAP IMAGES
+-----------------------
 1. Compile it like normal OTClient:
+    
+    https://github.com/edubart/otclient/wiki/Compiling-on-Windows
+    
+    https://github.com/edubart/otclient/wiki/Compiling-on-Linux
+    
+    https://github.com/edubart/otclient/wiki/Compiling-on-Mac-OS-X
+    
+    https://github.com/edubart/otclient/wiki/Compiling-for-Android
 
-https://github.com/edubart/otclient/wiki/Compiling-on-Windows
-
-https://github.com/edubart/otclient/wiki/Compiling-on-Linux
-
-https://github.com/edubart/otclient/wiki/Compiling-on-Mac-OS-X
-
-https://github.com/edubart/otclient/wiki/Compiling-for-Android
+        You can also download binary file from my thread on OTLand.net
+        Search for 'OTClient' threads made by 'Gesior.pl' on 'Tools' board:
+        https://otland.net/forums/tools.19/
 
 2. Copy your server **client .spr and .dat** files to OTClient folder: **data/things/HERE_PROTOCOL_VERSION/**
 
@@ -55,21 +62,21 @@ https://github.com/edubart/otclient/wiki/Compiling-for-Android
 
 	**%HOMEPATH%/otclient** - Windows, open it in folder explorer
 	
-	**$({HOME}/.otclient** - Linux, 'cd' to it, this folder is invisible, but you can navigate to it
+	**${HOME}/.otclient** - Linux, 'cd' to it, this folder is invisible, but you can navigate to it
 
 10. Copy folder **map** from folder metioned in previous step to folder **website_and_php_files** of otclient_mapgen.
 
---- NEXT STEPS REQUIRE **PHP** INSTALLED IN SYSTEM ---
-
---- LINUX: FOR GENERATION TIME, SET FOLDER **website_and_php_files** RIGHTS TO 777 ---
+    --- NEXT STEPS REQUIRE **PHP** INSTALLED IN SYSTEM ---
+    
+    --- LINUX: FOR GENERATION TIME, SET FOLDER **website_and_php_files** RIGHTS TO 777 ---
 
 11. Execute (in system terminal):
 
 	**php 1_pre_tile_generator.php**
 
 12. Execute (command parameter is map 'floor'):
-- You can execute these commands in any order.
-- You can open few terminals and run few commands at once to generate it faster (use all CPU cores).
+    - You can execute these commands in any order.
+    - You can open few terminals and run few commands at once to generate it faster (use all CPU cores).
 
 	**php 2_tile_generator.php 0**
 	
@@ -110,9 +117,9 @@ https://github.com/edubart/otclient/wiki/Compiling-for-Android
 	**php 3_pre_compress.php**
 
 14. Execute (command parameter is map 'floor'):
-- You can set compression quality in file 4_compress.php (line: $quality = 80;)
-- You can execute these commands in any order.
-- You can open few terminals and run few commands at once to generate it faster (use all CPU cores).
+    - You can set compression quality in file 4_compress.php (line: $quality = 80;)
+    - You can execute these commands in any order.
+    - You can open few terminals and run few commands at once to generate it faster (use all CPU cores).
 
 	**php 4_compress.php 0**
 	
@@ -166,3 +173,29 @@ https://github.com/edubart/otclient/wiki/Compiling-for-Android
 	minZoom: 4,
 	
 	maxZoom: 18, // maximum zoom with full quality is 16
+
+GENERATE HOUSE IMAGES
+-----------------------
+
+1. Do steps 1-6 from **GENERATE WHOLE MAP IMAGES** instruction (above).
+
+2. Type in client terminal command like:
+    
+   **generateHouses(30, false)**
+    
+	- **30** - shadow percent for tiles around house (they will be darker)
+	
+	- **false** - load whole map at once, requires much RAM, set it to **true** to load map by parts,
+	it's much slower, but will use little amount of RAM to generate house images
+
+    **It will freez client for house generation time!** Don't close it. If you want watch progress run OTClient by windows/linux console (not by clicking .exe):
+
+    ./otclient
+
+    'Freezed' client will show messages about generated houses in system console.
+
+3. Your house images will appear in your system 'user' directory
+
+	**%HOMEPATH%/otclient/house/** - Windows, open it in folder explorer
+	
+	**${HOME}/.otclient/house/** - Linux, 'cd' to it, this folder is invisible, but you can navigate to it

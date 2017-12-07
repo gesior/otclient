@@ -151,12 +151,13 @@ public:
 
 	// map image generation functions
 	void initializeMapGenerator(int threadsNumber);
-	int getAreasCount() { return mapAreas.size(); }
+	unsigned long getAreasCount() { return mapAreas.size(); }
 	int getGeneratedAreasCount() { return generatedAreasCount; }
 	void setGeneratedAreasCount(int countOfAreas) { generatedAreasCount = countOfAreas; }
 	void increaseGeneratedAreasCount() { generatedAreasCount++; }
 	void addAreasToGenerator(int startAreaId, int endAreaId);
-	void drawMap(std::string fileName, int sx, int sy, int sz, int size);
+	void drawMap(std::string fileName, int sx, int sy, short sz, int size, uint32 houseId = 0);
+	void drawHouse(uint32 houseId, int houseImageMarginSize);
 	Position getMinPosition() { return minPosition; }
 	Position getMaxPosition() { return maxPosition; }
 	int getMaxXToLoad() { return maxXToLoad; }
@@ -169,7 +170,7 @@ public:
 	void setMinXToRender(int newMinXToRender) { minXToRender = newMinXToRender; }
 	std::map<uint32, uint32> getMapTilesPerX() { return mapTilesPerX; }
 	int getShadowPercent() { return shadowPercent; }
-	void setShadowPercent(int newShadowPercent) { shadowPercent = newShadowPercent; }
+	void setShadowPercent(uint8 newShadowPercent) { shadowPercent = newShadowPercent; }
 
     void loadOtbm(const std::string& fileName);
     void saveOtbm(const std::string& fileName);
@@ -300,7 +301,7 @@ private:
 	int minXToLoad = 0;
 	int maxXToRender = 0;
 	int minXToRender = 0;
-	int shadowPercent = 20;
+	uint8 shadowPercent = 20;
 
 };
 
