@@ -20,7 +20,7 @@ var mapConfig = {
 	outfitAnimatedGeneratorURL: 'http://outfit-images.ots.me/animatedOutfits1090/animoutfit.php?',
 	
 	// NPC & Monsters
- -	creaturesDataURL: false, // set 'false' to disable, set 'creaturesData.php' to make it load data
+	creaturesDataURL: false, // set 'false' to disable, set 'creaturesData.php' to make it load data
 	drawMonstersMinimumZoom: 14,
 	drawNpcsMinimumZoom: 13,
 }
