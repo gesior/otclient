@@ -151,7 +151,7 @@ public:
 
 	// map image generation functions
 	void initializeMapGenerator(int threadsNumber);
-	unsigned long getAreasCount() { return mapAreas.size(); }
+	uint64 getAreasCount() { return mapAreas.size(); }
 	int getGeneratedAreasCount() { return generatedAreasCount; }
 	void setGeneratedAreasCount(int countOfAreas) { generatedAreasCount = countOfAreas; }
 	void increaseGeneratedAreasCount() { generatedAreasCount++; }
