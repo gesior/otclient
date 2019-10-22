@@ -315,3 +315,49 @@ function generateHouses(shadowPercent, doPartialLoading)
 
 	g_dispatcher.scheduleEvent(mapLoadManager, 100)
 end
+
+function exportAnimatedOutfits()
+	for i,v in pairs(g_things.getThingTypes(1)) do
+		if(v and v:getId() > 0) then
+			outfit = g_things.getThingType(v:getId(),1)
+			outfit:exportImage(v:getId(), 1)
+		end
+	end
+end
+
+function exportOutfits()
+	for i,v in pairs(g_things.getThingTypes(1)) do
+		if(v and v:getId() > 0) then
+			outfit = g_things.getThingType(v:getId(),1)
+			outfit:exportImage(v:getId(), 2)
+		end
+	end
+end
+
+function exportItems()
+	for i,v in pairs(g_things.getThingTypes(0)) do
+		if(v and v:getId() > 0) then
+			itemOtb = g_things.findItemTypeByClientId(v:getId())
+			if(itemOtb and itemOtb:getClientId() > 0) then
+				item = g_things.getThingType(itemOtb:getClientId(),0)
+				if(item and item:getId() > 0) then
+					item:exportImage(itemOtb:getServerId(), 3)
+				end
+			end
+		end
+	end
+end
+
+function exportAnimatedItems()
+	for i,v in pairs(g_things.getThingTypes(0)) do
+		if(v and v:getId() > 0) then
+			itemOtb = g_things.findItemTypeByClientId(v:getId())
+			if(itemOtb and itemOtb:getClientId() > 0) then
+				item = g_things.getThingType(itemOtb:getClientId(),0)
+				if(item and item:getId() > 0) then
+					item:exportImage(itemOtb:getServerId(), 4)
+				end
+			end
+		end
+	end
+end

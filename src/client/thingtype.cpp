@@ -331,6 +331,7 @@ void ThingType::exportImage(std::string fileName, int type)
 	1 - outfit export, all animation frames
 	2 - outfit export, only first animation frame
 	3 - items export, first frame of animation
+	4 - items export, all frames of animation
 	*/
 	if (m_null)
 		stdext::throw_exception("cannot export null thingtype");
@@ -438,6 +439,25 @@ void ThingType::exportImage(std::string fileName, int type)
 			}
 		}
 		image->savePNG(stdext::format("items/%s.png", fileName));
+	}
+	else if (type == 4)
+	{
+		/* ITEMS */
+		g_resources.makeDir("items_animation");
+
+		ImagePtr image(new Image(Size(32 * m_size.width(), 32 * m_size.height())));
+
+		for (int a = 0; a < m_animationPhases && a < 8; ++a) {
+			for (int l = 0; l < m_layers; ++l) {
+				for (int w = 0; w < m_size.width(); ++w) {
+					for (int h = 0; h < m_size.height(); ++h) {
+						image->blit(Point(32 * (m_size.width() - w - 1), 32 * (m_size.height() - h - 1)),
+									g_sprites.getSpriteImage(m_spritesIndex[getSpriteIndex(w, h, l, 0, 0, 0, a)]));
+					}
+				}
+			}
+			image->savePNG(stdext::format("items_animation/%s_%d.png", fileName, a));
+		}
 	}
 }
 
