@@ -6,7 +6,7 @@ It can also generate house images for website.
 
 ### How to use?
 
-GENERATE WHOLE MAP IMAGES
+GENERATE PNG IMAGES FROM OTBM
 -----------------------
 1. Compile it like normal OTClient:
     
@@ -18,9 +18,7 @@ GENERATE WHOLE MAP IMAGES
     
     https://github.com/edubart/otclient/wiki/Compiling-for-Android
 
-        You can also download binary file from my thread on OTLand.net
-        Search for 'OTClient' threads made by 'Gesior.pl' on 'Tools' board:
-        https://otland.net/forums/tools.19/
+        You can also download binary file from GitHub Releases
 
 2. Copy your server **client .spr and .dat** files to OTClient folder: **data/things/HERE_PROTOCOL_VERSION/**
 
@@ -44,7 +42,7 @@ GENERATE WHOLE MAP IMAGES
 	
 	[Paths are relational, so start path with '/' to start in folder 'data', access to other folders in computer is blocked]
 
-7. OTClient will show in 10-50 seconds (it will freez client, do not close it, just wait) something like:
+7. OTClient will show after 10-50 seconds (it will freez client, do not close it, just wait) something like:
 
 	Now just type (lower levels shadow 30%)
 	ALL PARTS OF MAP:
@@ -64,17 +62,51 @@ GENERATE WHOLE MAP IMAGES
 	
 	**${HOME}/.otclient** - Linux, 'cd' to it, this folder is invisible, but you can navigate to it
 
-10. Copy folder **map** from folder metioned in previous step to folder **website_and_php_files** of otclient_mapgen.
+10. Copy folder **map** from folder user's directory to folder **website_and_php_files** of otclient_mapgen.
 
     --- NEXT STEPS REQUIRE **PHP** INSTALLED IN SYSTEM ---
     
     --- LINUX: FOR GENERATION TIME, SET FOLDER **website_and_php_files** RIGHTS TO 777 ---
 
-11. Execute (in system terminal):
+GENERATE MAP ZOOM LEVELS FOR WEBSITE
+-----------------------
+### Linux
+
+1. Execute (in terminal):
+
+    **sh linux_run_all.sh**
+
+### Windows
+
+##### 1. If you got Git BASH installed
+
+1. Execute (in system terminal):
+
+	**./windows_run_1_pre_tile_generator.sh**
+
+2. Execute:
+
+	**./windows_run_2_tile_generator.sh**
+
+    Watch CPU usage (by php.exe). Wait until it finish.
+
+3. Execute:
+
+	**./windows_run_3_pre_compress.sh**
+
+4. Execute:
+
+	**./windows_run_4_compress.sh**
+
+    Watch CPU usage (by php.exe). Wait until it finish.
+
+##### 2. If you do not have Git BASH
+
+1. Execute (in system terminal):
 
 	**php 1_pre_tile_generator.php**
 
-12. Execute (command parameter is map 'floor'):
+2. Execute (command parameter is map 'floor'):
     - You can execute these commands in any order.
     - You can open few terminals and run few commands at once to generate it faster (use all CPU cores).
 
@@ -112,11 +144,11 @@ GENERATE WHOLE MAP IMAGES
 	
 	**php 2_tile_generator.php 16**
 
-13. Execute:
+3. Execute:
 
 	**php 3_pre_compress.php**
 
-14. Execute (command parameter is map 'floor'):
+4. Execute (command parameter is map 'floor'):
     - You can set compression quality in file 4_compress.php (line: $quality = 80;)
     - You can execute these commands in any order.
     - You can open few terminals and run few commands at once to generate it faster (use all CPU cores).
@@ -155,31 +187,27 @@ GENERATE WHOLE MAP IMAGES
 	
 	**php 4_compress.php 16**
 
+## Setup website
 15. Move folder **website_and_php_files/map_viewer** to your webserver - it contains all images and website scripts to view them (Leaflet Map).
 
 16. Configure map_viewer. Config is at start of **map.js** file:
-- You can keep images on other webserver. Set **imagesUrl** to URL of this server like: 'http://myserver.com/map_images/'
-
-	imagesUrl: 'map/', // URL to folder with 'zoom levels' (folders with names 0-16)
-	
-	imagesExtension: '.jpg',
-	
-	mapName: 'RL MAP?',
-	
-	startPosition: {x: 1000, y: 1000, z: 7},
-	
-	startZoom: 14,
-	
-	minZoom: 4,
-	
-	maxZoom: 18, // maximum zoom with full quality is 16
+- You can keep images on other webserver. Set **imagesUrl** to URL of your server starting with 'http' (or 'https'): 'http://myserver.com/map_images/'
+```
+    imagesUrl: 'map/', // URL to folder with 'zoom levels' (folders with names 0-16)
+    imagesExtension: '.jpg',
+    mapName: 'RL MAP?',
+    startPosition: {x: 32000, y: 32000, z: 7},
+    startZoom: 14,
+    minZoom: 4,
+    maxZoom: 18, // maximum zoom with full quality is 16
+```
 
 GENERATE HOUSE IMAGES
 -----------------------
 
 1. Do steps 1-6 from **GENERATE WHOLE MAP IMAGES** instruction (above).
 
-2. Type in client terminal command like:
+2. Type in client terminal command:
     
    **generateHouses(30, false)**
     
@@ -194,8 +222,28 @@ GENERATE HOUSE IMAGES
 
     'Freezed' client will show messages about generated houses in system console.
 
-3. Your house images will appear in your system 'user' directory
+3. Your house images will appear in your system 'user' directory:
 
 	**%HOMEPATH%/otclient/house/** - Windows, open it in folder explorer
 	
 	**${HOME}/.otclient/house/** - Linux, 'cd' to it, this folder is invisible, but you can navigate to it
+
+GENERATE FULL MINIMAP FOR OTCLIENT
+-----------------------
+
+1. Do steps 1-6 from **GENERATE WHOLE MAP IMAGES** instruction (above).
+
+2. Type in client terminal command:
+    
+   **saveMinimap('minimap.otmm')**
+
+3. Your minimap will appear in your system 'user' directory:
+
+	**%HOMEPATH%/otclient/** - Windows, open it in folder explorer
+	
+	**${HOME}/.otclient/** - Linux, 'cd' to it, this folder is invisible, but you can navigate to it
+
+4. Copy it to folder **data** in your normal OTClient.
+It must be closed when you place there new minimap!
+
+5. Run your OTClient, login to game, you should see full minimap.
