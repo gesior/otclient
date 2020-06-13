@@ -291,6 +291,7 @@ function mapLoadManager()
 		g_logger.info("Map loading finished.")
 		
 		g_logger.info("Starting house image generator.")
+		g_logger.info("CLIENT WILL FREEZ! Watch progress in house images output folder.")
 		g_dispatcher.scheduleEvent(generateHouseImages, 1000)
 	end
 end
@@ -314,4 +315,13 @@ function generateHouses(shadowPercent, doPartialLoading)
 	end
 
 	g_dispatcher.scheduleEvent(mapLoadManager, 100)
+end
+
+function saveMinimap(path)
+	g_map.setMinXToLoad(0)
+	g_map.setMaxXToLoad(70000)
+	g_map.setMinXToRender(0)
+	g_map.setMaxXToRender(70000)
+	g_map.loadOtbm(mapPath)
+	g_minimap.saveOtmm(path)
 end

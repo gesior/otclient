@@ -316,6 +316,11 @@ void Map::drawHouse(uint32 houseId, int houseImageMarginSize)
 	}
 
 	int imageSize = std::max(maxX - minX, maxY - minY) + houseImageMarginSize * 2;
+	if (imageSize > 100) {
+		std::cout << "ERROR: House width or height is higher than 100 tiles! House ID: " << houseId << ", size: " << imageSize << std::endl;
+		return;
+	}
+
 	int sx = minX - ((imageSize - (maxX - minX)) / 2);
 	int sy = minY - ((imageSize - (maxY - minY)) / 2);
 	std::cout << "Generate house ID: " << houseId << ", size: " << imageSize << std::endl;
