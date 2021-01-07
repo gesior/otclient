@@ -42,7 +42,7 @@
 void mapPartGenerator(int x, int y, int z)
 {
 	std::stringstream path;
-	path << "map/" << x << "_" << y << "_" << z << ".png";
+	path << "exported_images/map/" << x << "_" << y << "_" << z << ".png";
 	g_map.drawMap(path.str(), x * 8, y * 8, z, 8);
 	g_map.increaseGeneratedAreasCount();
 }
@@ -187,7 +187,6 @@ WorkQueue<MapGenWorkItem> queue(1);
 void Map::initializeMapGenerator(int threadsNumber)
 {
 	queue.start(threadsNumber);
-	g_resources.makeDir("map");
 	g_logger.debug(stdext::format("Started %d map generator threads.", queue.workerCount));
 }
 
@@ -327,7 +326,7 @@ void Map::drawHouse(uint32 houseId, int houseImageMarginSize)
 
 	for (auto floor : floors) {
 		std::stringstream path;
-		path << "house/"<< houseId << "_" << floor << ".png";
+		path << "exported_images/house/"<< houseId << "_" << floor << ".png";
 		drawMap(path.str(), sx, sy, floor, imageSize, houseId);
 	}
 }
@@ -376,7 +375,7 @@ void Map::loadOtbm(const std::string& fileName)
 
         uint32 headerMajorItems = root->getU8();
         if(headerMajorItems > g_things.getOtbMajorVersion()) {
-            stdext::throw_exception(stdext::format("This map was saved with different OTB version. read %d what it's supposed to be: %d",
+            g_logger.warning(stdext::format("This map was saved with different OTB version. read %d what it's supposed to be: %d",
                                                headerMajorItems, g_things.getOtbMajorVersion()));
         }
 

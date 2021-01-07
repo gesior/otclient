@@ -71,17 +71,16 @@ void Image::savePNG(const std::string& fileName)
 		// empty image, do not save
 		return;
 	}
+    std::ofstream outfile(fileName, std::ofstream::binary);
+    if (!outfile.is_open() || !outfile.good()) {
+        g_logger.error(stdext::format("Unable to save image to '%s'", fileName));
+        return;
+    }
 
-    FileStreamPtr fin = g_resources.createFile(fileName);
-    if(!fin)
-        stdext::throw_exception(stdext::format("failed to open file '%s' for write", fileName));
-
-    fin->cache();
     std::stringstream data;
     save_png(data, m_size.width(), m_size.height(), 4, (unsigned char*)getPixelData());
-    fin->write(data.str().c_str(), data.str().length());
-    fin->flush();
-    fin->close();
+    outfile.write(data.str().c_str(), data.str().length());
+    outfile.close();
 }
 
 void Image::cut()

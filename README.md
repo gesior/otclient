@@ -56,13 +56,11 @@ GENERATE PNG IMAGES FROM OTBM
 		
 	OTClient will report progress in terminal.
 
-9. Your map images will appear in your system 'user' directory
+9. Your map images will appear in OTClient directory
 
-	**%HOMEPATH%/otclient** - Windows, open it in folder explorer
-	
-	**${HOME}/.otclient** - Linux, 'cd' to it, this folder is invisible, but you can navigate to it
+	**exported_images/map** - open it in folder explorer
 
-10. Copy folder **map** from folder user's directory to folder **website_and_php_files** of otclient_mapgen.
+10. Copy directory **map** from **exported_images** directory to directory **website_and_php_files** of otclient_mapgen.
 
     --- NEXT STEPS REQUIRE **PHP** INSTALLED IN SYSTEM ---
     
@@ -205,7 +203,7 @@ GENERATE MAP ZOOM LEVELS FOR WEBSITE
 GENERATE HOUSE IMAGES
 -----------------------
 
-1. Do steps 1-6 from **GENERATE WHOLE MAP IMAGES** instruction (above).
+1. Do steps 1-6 from **GENERATE PNG IMAGES FROM OTBM** instruction (above).
 
 2. Type in client terminal command:
     
@@ -216,22 +214,21 @@ GENERATE HOUSE IMAGES
 	- **false** - load whole map at once, requires much RAM, set it to **true** to load map by parts,
 	it's much slower, but will use little amount of RAM to generate house images
 
-    **It will freez client for house generation time!** Don't close it. If you want watch progress run OTClient by windows/linux console (not by clicking .exe):
+    **It will freez client for house generation time!** Don't close it.
+    If you want watch progress run OTClient by windows/linux console (not by clicking .exe):
 
     ./otclient
 
     'Freezed' client will show messages about generated houses in system console.
 
-3. Your house images will appear in your system 'user' directory:
+3. Your house images will appear in OTClient directory:
 
-	**%HOMEPATH%/otclient/house/** - Windows, open it in folder explorer
-	
-	**${HOME}/.otclient/house/** - Linux, 'cd' to it, this folder is invisible, but you can navigate to it
+	**exported_images/house/**
 
 GENERATE FULL MINIMAP FOR OTCLIENT
 -----------------------
 
-1. Do steps 1-6 from **GENERATE WHOLE MAP IMAGES** instruction (above).
+1. Do steps 1-6 from **GENERATE PNG IMAGES FROM OTBM** instruction (above).
 
 2. Type in client terminal command:
     
