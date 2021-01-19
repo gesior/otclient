@@ -154,7 +154,11 @@ public:
 	uint64 getAreasCount() { return mapAreas.size(); }
 	int getGeneratedAreasCount() { return generatedAreasCount; }
 	void setGeneratedAreasCount(int countOfAreas) { generatedAreasCount = countOfAreas; }
-	void increaseGeneratedAreasCount() { generatedAreasCount++; }
+	void increaseGeneratedAreasCount() {
+		generatedAreasCountMutex.lock();
+		generatedAreasCount++;
+		generatedAreasCountMutex.unlock();
+	}
 	void addAreasToGenerator(int startAreaId, int endAreaId);
 	void drawMap(std::string fileName, int sx, int sy, short sz, int size, uint32 houseId = 0);
 	void drawHouse(uint32 houseId, int houseImageMarginSize);
@@ -302,6 +306,7 @@ private:
 	int maxXToRender = 0;
 	int minXToRender = 0;
 	uint8 shadowPercent = 20;
+	std::mutex generatedAreasCountMutex;
 
 };
 
