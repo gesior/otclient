@@ -110,6 +110,7 @@ void Client::registerLuaFunctions()
 	g_lua.bindSingletonFunction("g_map", "getAreasCount", &Map::getAreasCount, &g_map);
 	g_lua.bindSingletonFunction("g_map", "addAreasToGenerator", &Map::addAreasToGenerator, &g_map);
 	g_lua.bindSingletonFunction("g_map", "drawMap", &Map::drawMap, &g_map);
+	g_lua.bindSingletonFunction("g_map", "drawCustomMap", &Map::drawCustomMap, &g_map);
 	g_lua.bindSingletonFunction("g_map", "drawHouse", &Map::drawHouse, &g_map);
 	g_lua.bindSingletonFunction("g_map", "getMaxXToLoad", &Map::getMaxXToLoad, &g_map);
 	g_lua.bindSingletonFunction("g_map", "setMaxXToLoad", &Map::setMaxXToLoad, &g_map);

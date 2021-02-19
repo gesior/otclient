@@ -3,7 +3,7 @@
 
 g_logger.info('Startup done :]')
 g_logger.debug("----- STEP 1 -----")
-g_logger.info('OTClient Map Generator version: 5')
+g_logger.info('OTClient Map Generator version: 5.1')
 g_logger.info("prepare client to generate graphics, EXECUTE:")
 g_logger.debug("prepareClient(1076, '/things/1076/items.otb', '/map.otbm', 8, 5)")
 g_logger.info("'1076' - client version, OTC will load client .spr and .dat from folder 'data/things/1076'")

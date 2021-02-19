@@ -284,6 +284,68 @@ void Map::drawMap(std::string fileName, int sx, int sy, short sz, int size, uint
     image->savePNG(fileName);
 }
 
+void Map::drawCustomMap(std::string fileName, int sx, int sy, short sz, int ex, int ey, bool drawLowerFloors/* = false*/)
+{
+	Position pros;
+	int sizeX = ex - sx;
+	int sizeY = ey - sy;
+	if (sizeX <= 0 || sizeY <= 0) {
+		std::cout << "Max position is lower than min position! Cannot generate image!" << std::endl;
+		return;
+	}
+	ImagePtr image(new Image(Size(32 * (sizeX + 2), 32 * (sizeY + 2))));
+
+	int offset = 0;
+	if (drawLowerFloors) {
+		short lowestFloor = 15;
+		if (sz <= 7) {
+			lowestFloor = 7;
+		}
+		for (short z = lowestFloor; z > sz; z--) {
+			pros.z = z;
+			offset = z - sz;
+			for (int x = -offset; x <= sizeX; x++) {
+				for (int y = -offset; y <= sizeY; y++) {
+					pros.x = sx + x;
+					pros.y = sy + y;
+					if (const TilePtr &tile = getTile(pros)) {
+						int offX = x + 1 + offset;
+						int offY = y + 1 + offset;
+						if (offX < sizeX + 2 && offY < sizeY + 2) {
+							Point a(offX * 32, offY * 32);
+							tile->drawToImage(a, image);
+						}
+					}
+				}
+			}
+		}
+
+		image->addShadow(uint8(100 - shadowPercent));
+	}
+
+	pros.z = sz;
+	offset = 0;
+	for (int x = -offset; x <= sizeX; x++) {
+		for (int y = -offset; y <= sizeY; y++) {
+			pros.x = sx + x;
+			pros.y = sy + y;
+			if (const TilePtr &tile = getTile(pros)) {
+				int offX = x + 1 + offset;
+				int offY = y + 1 + offset;
+				if (offX < sizeX + 2 && offY < sizeY + 2) {
+					Point a(offX * 32, offY * 32);
+					tile->drawToImage(a, image);
+				}
+			}
+		}
+	}
+
+	// reduce image size to size from argument (for generation time image is 2 tiles bigger, because of 64x64 items)
+	image->cut();
+	// save to file, save function is modified and will ignore empty images!
+	image->savePNG(fileName);
+}
+
 void Map::drawHouse(uint32 houseId, int houseImageMarginSize)
 {
 	HousePtr house = g_houses.getHouse(houseId);

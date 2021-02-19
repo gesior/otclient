@@ -161,6 +161,7 @@ public:
 	}
 	void addAreasToGenerator(int startAreaId, int endAreaId);
 	void drawMap(std::string fileName, int sx, int sy, short sz, int size, uint32 houseId = 0);
+	void drawCustomMap(std::string fileName, int sx, int sy, short sz, int sizeX, int sizeY, bool drawLowerFloors = false);
 	void drawHouse(uint32 houseId, int houseImageMarginSize);
 	Position getMinPosition() { return minPosition; }
 	Position getMaxPosition() { return maxPosition; }
